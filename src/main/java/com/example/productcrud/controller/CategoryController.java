@@ -24,16 +24,31 @@ public class CategoryController {
     @GetMapping
     public String listCategories(
             @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             Model model) {
-        List<Category> categories;
+        
+        List<Category> allCategories;
         
         if (search != null && !search.trim().isEmpty()) {
-            categories = categoryService.findByNameContainingIgnoreCase(search.trim());
+            allCategories = categoryService.findByNameContainingIgnoreCase(search.trim());
         } else {
-            categories = categoryService.findAll();
+            allCategories = categoryService.findAll();
         }
         
-        model.addAttribute("categories", categories);
+        // Manual pagination
+        int start = page * size;
+        int end = Math.min(start + size, allCategories.size());
+        List<Category> pagedCategories = start < allCategories.size() 
+            ? allCategories.subList(start, end) 
+            : java.util.Collections.emptyList();
+        
+        int totalPages = (int) Math.ceil((double) allCategories.size() / size);
+        
+        model.addAttribute("categories", pagedCategories);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", allCategories.size());
         model.addAttribute("search", search);
         return "category/list";
     }

@@ -32,18 +32,21 @@ public class ProductController {
             @RequestParam(required = false) Long maxPrice,
             @RequestParam(required = false) Integer minStock,
             @RequestParam(required = false) Integer maxStock,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             Model model) {
-        List<Product> products;
+        
+        List<Product> allProducts;
         
         if (search != null && !search.trim().isEmpty()) {
-            products = productService.findByNameContainingIgnoreCase(search.trim());
+            allProducts = productService.findByNameContainingIgnoreCase(search.trim());
         } else {
-            products = productService.findAll();
+            allProducts = productService.findAll();
         }
         
-        // Apply filters regardless of search
+        // Apply filters
         if (minPrice != null || maxPrice != null || minStock != null || maxStock != null) {
-            products = products.stream()
+            allProducts = allProducts.stream()
                     .filter(p -> minPrice == null || p.getPrice() >= minPrice)
                     .filter(p -> maxPrice == null || p.getPrice() <= maxPrice)
                     .filter(p -> minStock == null || p.getStock() >= minStock)
@@ -51,7 +54,19 @@ public class ProductController {
                     .collect(java.util.stream.Collectors.toList());
         }
         
-        model.addAttribute("products", products);
+        // Manual pagination
+        int start = page * size;
+        int end = Math.min(start + size, allProducts.size());
+        List<Product> pagedProducts = start < allProducts.size() 
+            ? allProducts.subList(start, end) 
+            : java.util.Collections.emptyList();
+        
+        int totalPages = (int) Math.ceil((double) allProducts.size() / size);
+        
+        model.addAttribute("products", pagedProducts);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", allProducts.size());
         model.addAttribute("search", search);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
