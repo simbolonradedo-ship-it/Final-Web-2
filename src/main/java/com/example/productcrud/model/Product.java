@@ -4,15 +4,35 @@ import java.time.LocalDate;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "products")
 public class Product {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, length = 200)
     private String name;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    @Column(nullable = false)
     private long price;
+
+    @Column(nullable = false)
     private int stock;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(nullable = false)
     private boolean active;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate createdAt;
 
@@ -20,7 +40,7 @@ public class Product {
     }
 
     public Product(Long id, String name, Category category, long price, int stock,
-                   String description, boolean active, LocalDate createdAt) {
+                    String description, boolean active, LocalDate createdAt) {
         this.id = id;
         this.name = name;
         this.category = category;
