@@ -81,7 +81,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                                 <a th:href="@{/categories/{id}(id=${category.id})}" class="inline-flex items-center px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded transition-colors">Detail</a>
                                 <a th:href="@{/categories/{id}/edit(id=${category.id})}" class="inline-flex items-center px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded transition-colors">Edit</a>
-                                <form th:action="@{/categories/{id}/delete(id=${category.id})}" method="post" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
+                                <form th:action="@{/categories/{id}(id=${category.id})}" method="post" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="_method" value="delete"/>
                                     <button type="submit" class="inline-flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded transition-colors">Hapus</button>
                                 </form>
                             </td>

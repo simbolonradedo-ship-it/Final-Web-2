@@ -69,13 +69,6 @@ public class CategoryController {
         return "category/form";
     }
 
-    @PostMapping("/save")
-    public String saveCategory(@ModelAttribute Category category, RedirectAttributes redirectAttributes) {
-        categoryService.save(category);
-        redirectAttributes.addFlashAttribute("successMessage", "Kategori berhasil disimpan!");
-        return "redirect:/categories";
-    }
-
     @GetMapping("/{id}/edit")
     public String showEditForm(@PathVariable Long id, Model model) {
         return categoryService.findById(id)
@@ -86,7 +79,22 @@ public class CategoryController {
                 .orElse("redirect:/categories");
     }
 
-    @PostMapping("/{id}/delete")
+    @PostMapping
+    public String createCategory(@ModelAttribute Category category, RedirectAttributes redirectAttributes) {
+        categoryService.save(category);
+        redirectAttributes.addFlashAttribute("successMessage", "Kategori berhasil disimpan!");
+        return "redirect:/categories";
+    }
+
+    @PutMapping("/{id}")
+    public String updateCategory(@PathVariable Long id, @ModelAttribute Category category, RedirectAttributes redirectAttributes) {
+        category.setId(id);
+        categoryService.save(category);
+        redirectAttributes.addFlashAttribute("successMessage", "Kategori berhasil diperbarui!");
+        return "redirect:/categories";
+    }
+
+    @DeleteMapping("/{id}")
     public String deleteCategory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         categoryService.deleteById(id);
         redirectAttributes.addFlashAttribute("successMessage", "Kategori berhasil dihapus!");

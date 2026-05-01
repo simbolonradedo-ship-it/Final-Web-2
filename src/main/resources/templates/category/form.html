@@ -12,8 +12,10 @@
         </div>
 
         <div class="bg-white rounded-2xl shadow-lg p-8">
-            <form th:action="@{/categories/save}" th:object="${category}" method="post" class="space-y-6">
+            <form th:action="${category.id != null ? @{/categories/{id}(id=${category.id})} : @{/categories}}" th:object="${category}" method="post" class="space-y-6">
                 <input type="hidden" th:field="*{id}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="_method" th:value="${category.id != null ? 'PUT' : 'POST'}" th:if="${category.id != null}"/>
 
                 <div>
                     <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">Nama Kategori</label>
