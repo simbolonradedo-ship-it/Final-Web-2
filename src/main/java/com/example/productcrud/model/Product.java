@@ -1,34 +1,30 @@
 package com.example.productcrud.model;
 
-import java.time.LocalDate;
+import jakarta.persistence.*;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
+@Entity
+@Table(name = "products")
 public class Product {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private String name;
-    private Category category;
+
     private long price;
     private int stock;
     private String description;
-    private boolean active;
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate createdAt;
 
     public Product() {
     }
 
-    public Product(Long id, String name, Category category, long price, int stock,
-                   String description, boolean active, LocalDate createdAt) {
-        this.id = id;
+    public Product(String name, long price, int stock, String description) {
         this.name = name;
-        this.category = category;
         this.price = price;
         this.stock = stock;
         this.description = description;
-        this.active = active;
-        this.createdAt = createdAt;
     }
 
     public Long getId() {
@@ -45,14 +41,6 @@ public class Product {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
     }
 
     public long getPrice() {
@@ -77,21 +65,5 @@ public class Product {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public LocalDate getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDate createdAt) {
-        this.createdAt = createdAt;
     }
 }

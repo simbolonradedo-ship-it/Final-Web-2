@@ -1,9 +1,8 @@
 package com.example.productcrud.controller;
 
-import com.example.productcrud.model.Category;
 import com.example.productcrud.model.Product;
 import com.example.productcrud.service.ProductService;
-import java.time.LocalDate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +13,7 @@ public class ProductController {
 
     private final ProductService productService;
 
+    @Autowired
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
@@ -41,10 +41,7 @@ public class ProductController {
 
     @GetMapping("/products/new")
     public String showCreateForm(Model model) {
-        Product product = new Product();
-        product.setCreatedAt(LocalDate.now());
-        model.addAttribute("product", product);
-        model.addAttribute("categories", Category.values());
+        model.addAttribute("product", new Product());
         return "product/form";
     }
 
@@ -60,7 +57,6 @@ public class ProductController {
         return productService.findById(id)
                 .map(product -> {
                     model.addAttribute("product", product);
-                    model.addAttribute("categories", Category.values());
                     return "product/form";
                 })
                 .orElse("redirect:/products");

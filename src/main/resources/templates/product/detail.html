@@ -18,10 +18,6 @@
                                 <td th:text="${product.name}">-</td>
                             </tr>
                             <tr>
-                                <th class="text-muted">Kategori</th>
-                                <td th:text="${product.category?.displayName}">-</td>
-                            </tr>
-                            <tr>
                                 <th class="text-muted">Harga</th>
                                 <td th:text="${'Rp ' + #numbers.formatDecimal(product.price, 0, 'POINT', 0, 'COMMA')}">Rp 0</td>
                             </tr>
@@ -32,17 +28,6 @@
                             <tr>
                                 <th class="text-muted">Deskripsi</th>
                                 <td th:text="${product.description}">-</td>
-                            </tr>
-                            <tr>
-                                <th class="text-muted">Status</th>
-                                <td>
-                                    <span th:if="${product.active}" class="badge bg-success">Aktif</span>
-                                    <span th:unless="${product.active}" class="badge bg-danger">Tidak Aktif</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th class="text-muted">Tanggal Dibuat</th>
-                                <td th:text="${product.createdAt}">-</td>
                             </tr>
                         </table>
                     </div>
