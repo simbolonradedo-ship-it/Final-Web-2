@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: header}">
+</head>
+<body>
+    <nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Daftar Kategori</h2>
+            <a th:href="@{/categories/new}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Tambah Kategori
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 flex items-center" role="alert">
+            <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-700 flex items-center" role="alert">
+            <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <p class="text-gray-500 mb-4">Total kategori: <strong th:text="${#lists.size(categories)}">0</strong></p>
+
+        <div th:if="${!#lists.isEmpty(categories)}">
+            <div class="bg-white shadow overflow-hidden border-b border-gray-200 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-800 text-white">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-semibold">No</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold">Nama Kategori</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold">Deskripsi</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="category, iterStat : ${categories}" class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${iterStat.index + 1}">1</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${category.name}">Nama Kategori</td>
+                            <td class="px-6 py-4 text-sm text-gray-600" th:text="${category.description != null ? category.description : '-'}">Deskripsi</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                <a th:href="@{/categories/{id}(id=${category.id})}" class="inline-flex items-center px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded transition-colors">Detail</a>
+                                <a th:href="@{/categories/{id}/edit(id=${category.id})}" class="inline-flex items-center px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded transition-colors">Edit</a>
+                                <form th:action="@{/categories/{id}/delete(id=${category.id})}" method="post" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
+                                    <button type="submit" class="inline-flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded transition-colors">Hapus</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(categories)}" class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-gray-500 text-lg mb-4">Belum ada kategori.</p>
+            <a th:href="@{/categories/new}" class="inline-flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+                Tambah Kategori Pertama
+            </a>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
