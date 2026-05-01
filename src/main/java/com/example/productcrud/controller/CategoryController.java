@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/categories")
 public class CategoryController {
@@ -20,8 +22,19 @@ public class CategoryController {
     }
 
     @GetMapping
-    public String listCategories(Model model) {
-        model.addAttribute("categories", categoryService.findAll());
+    public String listCategories(
+            @RequestParam(required = false) String search,
+            Model model) {
+        List<Category> categories;
+        
+        if (search != null && !search.trim().isEmpty()) {
+            categories = categoryService.findByNameContainingIgnoreCase(search.trim());
+        } else {
+            categories = categoryService.findAll();
+        }
+        
+        model.addAttribute("categories", categories);
+        model.addAttribute("search", search);
         return "category/list";
     }
 

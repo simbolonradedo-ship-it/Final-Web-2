@@ -22,6 +22,10 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
+    public List<Category> findByNameContainingIgnoreCase(String name) {
+        return categoryRepository.findByNameContainingIgnoreCase(name);
+    }
+
     public Optional<Category> findById(Long id) {
         return categoryRepository.findById(id);
     }

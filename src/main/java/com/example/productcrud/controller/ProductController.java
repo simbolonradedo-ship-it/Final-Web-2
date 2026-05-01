@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
 @Controller
 public class ProductController {
 
@@ -24,8 +26,37 @@ public class ProductController {
     }
 
     @GetMapping("/products")
-    public String listProducts(Model model) {
-        model.addAttribute("products", productService.findAll());
+    public String listProducts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long minPrice,
+            @RequestParam(required = false) Long maxPrice,
+            @RequestParam(required = false) Integer minStock,
+            @RequestParam(required = false) Integer maxStock,
+            Model model) {
+        List<Product> products;
+        
+        if (search != null && !search.trim().isEmpty()) {
+            products = productService.findByNameContainingIgnoreCase(search.trim());
+        } else {
+            products = productService.findAll();
+        }
+        
+        // Apply filters regardless of search
+        if (minPrice != null || maxPrice != null || minStock != null || maxStock != null) {
+            products = products.stream()
+                    .filter(p -> minPrice == null || p.getPrice() >= minPrice)
+                    .filter(p -> maxPrice == null || p.getPrice() <= maxPrice)
+                    .filter(p -> minStock == null || p.getStock() >= minStock)
+                    .filter(p -> maxStock == null || p.getStock() <= maxStock)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+        
+        model.addAttribute("products", products);
+        model.addAttribute("search", search);
+        model.addAttribute("minPrice", minPrice);
+        model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("minStock", minStock);
+        model.addAttribute("maxStock", maxStock);
         return "product/list";
     }
 
