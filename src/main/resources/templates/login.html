@@ -6,77 +6,77 @@
     <title>Login - Product CRUD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
     <div class="w-full max-w-md">
         <!-- Logo & Title -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full shadow-xl mb-4 border border-white/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                 </svg>
             </div>
-            <h1 class="text-3xl font-bold text-white mb-2">Product CRUD</h1>
-            <p class="text-blue-100">Masuk ke akun Anda</p>
+            <h1 class="text-3xl font-black text-white mb-2 tracking-tight">Masuk ke Akun</h1>
+            <p class="text-purple-200 text-sm">Gunakan kredensial Anda untuk melanjutkan</p>
         </div>
 
         <!-- Login Card -->
-        <div class="bg-white rounded-2xl shadow-2xl p-8">
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/10">
             <!-- Success Message -->
-            <div th:if="${successMessage}" class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg flex items-center">
-                <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div th:if="${successMessage}" class="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-r-lg flex items-start">
+                <svg class="w-5 h-5 text-emerald-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <span class="text-green-700 text-sm" th:text="${successMessage}"></span>
+                <span class="text-emerald-700 text-sm" th:text="${successMessage}"></span>
             </div>
 
             <!-- Error Message -->
-            <div th:if="${errorMessage}" class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg flex items-center">
-                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div th:if="${errorMessage}" class="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 rounded-r-lg flex items-start">
+                <svg class="w-5 h-5 text-rose-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <span class="text-red-700 text-sm" th:text="${errorMessage}"></span>
+                <span class="text-rose-700 text-sm" th:text="${errorMessage}"></span>
             </div>
 
-            <form th:action="@{/auth/login}" method="post" class="space-y-6">
+            <form th:action="@{/auth/login}" method="post" class="space-y-5">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                 <!-- Username Field -->
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
                         </div>
                         <input type="text" id="username" name="username" required autofocus
-                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
+                               class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-gray-50 focus:bg-white"
                                placeholder="Masukkan username">
                     </div>
                 </div>
 
                 <!-- Password Field -->
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
                         </div>
                         <input type="password" id="password" name="password" required
-                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors outline-none"
+                               class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-gray-50 focus:bg-white"
                                placeholder="Masukkan password">
                     </div>
                 </div>
 
                 <!-- Submit Button -->
                 <button type="submit"
-                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:scale-[1.02]">
-                    Login
+                        class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Masuk
                 </button>
             </form>
 
@@ -84,7 +84,7 @@
             <div class="mt-6 text-center">
                 <p class="text-gray-600 text-sm">
                     Belum punya akun?
-                    <a th:href="@{/auth/register}" class="text-blue-600 hover:text-blue-800 font-semibold transition-colors">
+                    <a th:href="@{/auth/register}" class="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors">
                         Daftar sekarang
                     </a>
                 </p>
@@ -93,7 +93,7 @@
 
         <!-- Footer -->
         <div class="text-center mt-8">
-            <p class="text-white/60 text-sm">© 2026 Product CRUD. All rights reserved.</p>
+            <p class="text-white/60 text-xs">© 2026 Product CRUD. All rights reserved.</p>
         </div>
     </div>
 </body>
