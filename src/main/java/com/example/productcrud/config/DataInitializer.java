@@ -35,9 +35,8 @@ public class DataInitializer {
                                        CategoryRepository categoryRepository,
                                        ProductRepository productRepository,
                                        PasswordEncoder passwordEncoder) {
-        boolean hasAnyData = userRepository.count() > 0 || categoryRepository.count() > 0 || productRepository.count() > 0;
-        if (hasAnyData) {
-            System.out.println("Database sudah terisi. Melewati inisialisasi data awal.");
+        if (userRepository.count() > 0) {
+            System.out.println("Database sudah berisi pengguna dari run sebelumnya. Melewati inisialisasi data awal.");
             return;
         }
 

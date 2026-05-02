@@ -26,6 +26,8 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'com.h2database:h2'
 
@@ -37,7 +39,21 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-bootRun {
+tasks.register('freePort8080', Exec) {
+    group = 'application'
+    description = 'Menghentikan proses yang sedang LISTEN di port 8080 (agar bootRun tidak bentrok).'
+    ignoreExitValue = true
+    if (System.getProperty('os.name').toLowerCase().contains('win')) {
+        commandLine 'powershell', '-NoProfile', '-Command',
+            'Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }'
+    } else {
+        commandLine 'sh', '-c',
+            'for pid in $(command -v lsof >/dev/null 2>&1 && lsof -t -iTCP:8080 -sTCP:LISTEN 2>/dev/null); do kill -9 "$pid" 2>/dev/null; done; exit 0'
+    }
+}
+
+tasks.named('bootRun') {
+    dependsOn 'freePort8080'
     jvmArgs = ['--enable-native-access=ALL-UNNAMED']
     systemProperties = System.getenv()
 }
