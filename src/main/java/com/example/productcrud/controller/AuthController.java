@@ -2,8 +2,6 @@ package com.example.productcrud.controller;
 
 import com.example.productcrud.model.User;
 import com.example.productcrud.repository.UserRepository;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,17 +21,8 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    private boolean isAuthenticated() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth != null && auth.isAuthenticated() && !(auth.getPrincipal() instanceof String && auth.getPrincipal().equals("anonymousUser"));
-    }
-
     @GetMapping("/auth/login")
     public String loginPage(Model model, String error, String logout) {
-        if (isAuthenticated()) {
-            return "redirect:/";
-        }
-        
         if (error != null) {
             model.addAttribute("errorMessage", "Username atau password salah!");
         }
@@ -45,9 +34,6 @@ public class AuthController {
 
     @GetMapping("/auth/register")
     public String registerPage() {
-        if (isAuthenticated()) {
-            return "redirect:/";
-        }
         return "register";
     }
 

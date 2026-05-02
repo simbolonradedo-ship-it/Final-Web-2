@@ -91,6 +91,13 @@ public class ProductController {
         return "product/form";
     }
 
+    @PostMapping("/products/save")
+    public String saveProduct(@ModelAttribute Product product, RedirectAttributes redirectAttributes) {
+        productService.save(product);
+        redirectAttributes.addFlashAttribute("successMessage", "Produk berhasil disimpan!");
+        return "redirect:/products";
+    }
+
     @GetMapping("/products/{id}/edit")
     public String showEditForm(@PathVariable Long id, Model model) {
         return productService.findById(id)
@@ -101,22 +108,7 @@ public class ProductController {
                 .orElse("redirect:/products");
     }
 
-    @PostMapping("/products")
-    public String createProduct(@ModelAttribute Product product, RedirectAttributes redirectAttributes) {
-        productService.save(product);
-        redirectAttributes.addFlashAttribute("successMessage", "Produk berhasil disimpan!");
-        return "redirect:/products";
-    }
-
-    @PutMapping("/products/{id}")
-    public String updateProduct(@PathVariable Long id, @ModelAttribute Product product, RedirectAttributes redirectAttributes) {
-        product.setId(id);
-        productService.save(product);
-        redirectAttributes.addFlashAttribute("successMessage", "Produk berhasil diperbarui!");
-        return "redirect:/products";
-    }
-
-    @DeleteMapping("/products/{id}")
+    @PostMapping("/products/{id}/delete")
     public String deleteProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         productService.deleteById(id);
         redirectAttributes.addFlashAttribute("successMessage", "Produk berhasil dihapus!");
