@@ -1,259 +1,27 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:fragment="header">
+<head th:fragment="head">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle ?: 'Product CRUD'} + ' | Product Management System'">Product CRUD</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    },
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'fade-in-up': 'fadeInUp 0.6s ease-out',
-                        'fade-in-left': 'fadeInLeft 0.5s ease-out',
-                        'fade-in-right': 'fadeInRight 0.5s ease-out'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Space Grotesk', sans-serif;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInLeft {
-            from { opacity: 0; transform: translateX(-40px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes fadeInRight {
-            from { opacity: 0; transform: translateX(40px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .card-3d {
-            transform-style: preserve-3d;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card-3d:hover {
-            transform: rotateY(2deg) rotateX(2deg) translateY(-8px);
-            box-shadow: 20px 20px 40px rgba(0,0,0,0.2);
-        }
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-    </style>
+    <title th:text="${pageTitle} ?: 'Final Web'">Final Web</title>
+    <link th:href="@{/css/app.css}" rel="stylesheet">
 </head>
 
-<nav th:fragment="navbar" class="glass-enhanced sticky top-0 z-50 border-b border-white/20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 items-center">
-            
-            <div class="flex-shrink-0 flex items-center">
-                <a th:href="@{/dashboard}" class="flex items-center space-x-2 group">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center transform transition-transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-box text-white text-lg"></i>
-                    </div>
-                    <span class="text-xl font-bold bg-gradient-to-r from-primary-600 via-primary-700 to-purple-600 bg-clip-text text-transparent font-semibold">ProductCRUD</span>
-                </a>
-            </div>
-
-            
-            <div class="hidden md:flex md:items-center md:space-x-1">
-                <a th:href="@{/dashboard}" 
-                   class="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50/50 transition-all duration-200 relative group"
-                   th:classappend="${#httpServletRequest.requestURI == '/dashboard'} ? 'bg-gradient-to-r from-primary-500/10 to-primary-600/10 text-primary-700 border border-primary-200' : ''">
-                    <i class="fas fa-chart-pie mr-2 opacity-70 group-hover:opacity-100"></i>Dashboard
-                    <span th:if="${#httpServletRequest.requestURI == '/dashboard'}" class="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full"></span>
-                </a>
-                <a th:href="@{/products(catalog=true)}" 
-                   class="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50/50 transition-all duration-200 relative"
-                   th:classappend="${param.catalog != null and param.catalog[0] == 'true'} ? 'bg-gradient-to-r from-secondary-500/10 to-secondary-600/10 text-secondary-700 border border-secondary-200' : ''">
-                    <i class="fas fa-store mr-2 opacity-70"></i>Katalog
-                </a>
-                <a th:href="@{/products}" 
-                   class="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50/50 transition-all duration-200 relative"
-                   th:classappend="${param.catalog == null or param.catalog[0] == 'false'} ? 'bg-gradient-to-r from-primary-500/10 to-primary-600/10 text-primary-700 border border-primary-200' : ''">
-                    <i class="fas fa-boxes mr-2 opacity-70"></i>Produk Saya
-                </a>
-                <a th:href="@{/swagger-ui.html}" target="_blank"
-                   class="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50/50 transition-all duration-200 relative group">
-                    <i class="fas fa-code mr-2 opacity-70 group-hover:text-primary-600"></i>API Docs
-                </a>
-            </div>
-
-            
-            <div class="hidden md:block" sec:authorize="isAuthenticated()">
-                <div class="relative">
-                    <button id="profileDropdown" 
-                            class="flex items-center space-x-3 p-1 pr-3 rounded-xl hover:bg-gray-100/50 transition-all duration-200 focus:outline-none group">
-                        <img th:src="${#authentication.principal.getClass().getName() == 'com.example.productcrud.service.CustomUserDetails' and !#strings.isEmpty(#authentication.principal.user.profileImageUrl) ? #authentication.principal.user.profileImageUrl : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + ${#authentication.principal.getClass().getName() == 'com.example.productcrud.service.CustomUserDetails' ? #authentication.principal.user.fullName : #authentication.principal.username}}"
-                             alt="Profile"
-                             class="h-9 w-9 rounded-full object-cover border-2 border-transparent group-hover:border-primary-300 transition-colors shadow-sm">
-                        <span class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden sm:block" th:text="${#authentication.principal.getClass().getName() == 'com.example.productcrud.service.CustomUserDetails' ? #authentication.principal.user.fullName : #authentication.principal.username}">Username</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-400 group-hover:text-primary-500 transition-colors"></i>
-                    </button>
-                    
-                    
-                    <div id="profileDropdownMenu" 
-                         class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl py-2 z-50 hidden origin-top-right border border-gray-100 animate-fade-in-up">
-                        <div class="px-4 py-2 border-b border-gray-100">
-                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Akun Saya</p>
-                        </div>
-                        <a th:href="@{/profile}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700 transition-all group">
-                            <i class="fas fa-user w-5 mr-3 text-primary-500 group-hover:scale-110 transition-transform"></i>Profil
-                        </a>
-                        <form th:action="@{/logout}" method="post" class="block">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <button type="submit" class="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all group">
-                                <i class="fas fa-sign-out-alt w-5 mr-3 text-red-500 group-hover:scale-110 transition-transform"></i>Logout
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            
-            <button id="mobileMenuButton" class="md:hidden p-2 rounded-xl hover:bg-gray-100/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Toggle menu">
-                <i class="fas fa-bars text-gray-600 text-lg"></i>
-            </button>
-        </div>
+<aside th:fragment="sidebar" class="sidebar">
+    <div class="sidebar-brand">Final Web</div>
+    <nav class="sidebar-nav">
+        <a th:href="@{/dashboard}" class="sidebar-link" th:classappend="${servletPath == '/dashboard'} ? ' active'">Dashboard</a>
+        <a th:href="@{/products}" class="sidebar-link" th:classappend="${servletPath == '/products' and param.catalog == null} ? ' active'">Produk saya</a>
+        <a th:href="@{/products(catalog=true)}" class="sidebar-link" th:classappend="${servletPath == '/products' and param.catalog != null and param.catalog[0] == 'true'} ? ' active'">Katalog admin</a>
+        <a th:href="@{/categories}" class="sidebar-link" th:classappend="${#strings.startsWith(servletPath, '/categories')} ? ' active'">Kategori</a>
+        <a th:href="@{/profile}" class="sidebar-link" th:classappend="${#strings.startsWith(servletPath, '/profile')} ? ' active'">Profil</a>
+        <a th:href="@{/swagger-ui.html}" target="_blank" rel="noopener noreferrer" class="sidebar-link">API (Swagger)</a>
+    </nav>
+    <div class="sidebar-foot">
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="sidebar-link" style="width:100%;text-align:left;">Keluar</button>
+        </form>
     </div>
-
-    
-    <div id="mobileMenu" class="md:hidden hidden border-t border-white/20 bg-white/95 backdrop-blur-lg">
-        <div class="px-4 pt-2 pb-4 space-y-1">
-            <a th:href="@{/dashboard}" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700 transition-all group">
-                <i class="fas fa-chart-pie w-5 mr-3 text-primary-500"></i>Dashboard
-            </a>
-            <a th:href="@{/products(catalog=true)}" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700 transition-all group">
-                <i class="fas fa-store w-5 mr-3 text-primary-500"></i>Katalog
-            </a>
-            <a th:href="@{/products}" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700 transition-all group">
-                <i class="fas fa-boxes w-5 mr-3 text-primary-500"></i>Produk Saya
-            </a>
-            <a th:href="@{/swagger-ui.html}" target="_blank" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700 transition-all group">
-                <i class="fas fa-code w-5 mr-3 text-primary-500"></i>API Docs
-            </a>
-            <div sec:authorize="isAuthenticated()">
-                <div class="border-t border-gray-200 my-2"></div>
-                <a th:href="@{/profile}" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700 transition-all group">
-                    <i class="fas fa-user w-5 mr-3 text-primary-500"></i>Profil
-                </a>
-                <form th:action="@{/logout}" method="post" th:if="${param._method == null}" class="mt-2">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                    <button type="submit" class="flex items-center w-full px-4 py-3 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 transition-all group">
-                        <i class="fas fa-sign-out-alt w-5 mr-3 text-red-500"></i>Logout
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<footer th:fragment="footer" class="glass-enhanced mt-auto border-t border-white/20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p class="text-center text-gray-500/80 text-sm">© 2026 ProductCRUD. Hak Cipta Dilindungi.</p>
-            <div class="flex space-x-6 text-sm">
-                <a href="/swagger-ui.html" target="_blank" class="text-gray-500/80 hover:text-primary-500 hover:underline transition-colors flex items-center gap-1">
-                    <i class="fas fa-code text-xs"></i>API Documentation
-                </a>
-                <a href="#" class="text-gray-500/80 hover:text-primary-500 hover:underline transition-colors">Privacy</a>
-                <a href="#" class="text-gray-500/80 hover:text-primary-500 hover:underline transition-colors">Terms</a>
-            </div>
-        </div>
-    </div>
-</footer>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const profileDropdown = document.getElementById('profileDropdown');
-        const profileDropdownMenu = document.getElementById('profileDropdownMenu');
-        const mobileMenuButton = document.getElementById('mobileMenuButton');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        if (profileDropdown && profileDropdownMenu) {
-            profileDropdown.addEventListener('click', function(e) {
-                e.stopPropagation();
-                profileDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', function(e) {
-                if (!profileDropdown.contains(e.target) && !profileDropdownMenu.contains(e.target)) {
-                    profileDropdownMenu.classList.add('hidden');
-                }
-            });
-        }
-        
-        if (mobileMenuButton && mobileMenu) {
-            mobileMenuButton.addEventListener('click', function() {
-                mobileMenu.classList.toggle('hidden');
-            });
-        }
-    });
-</script>
-
-
-<div id="toastContainer" class="toast-container"></div>
-
-<script>
-    function showToast(message, type = 'info', duration = 3000) {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
-        
-        const toast = document.createElement('div');
-        toast.className = `toast ${type} shadow-lg`;
-        toast.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} text-xl mt-0.5"></i>
-            <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900">${message}</p>
-            </div>
-            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        container.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            toast.style.transition = 'all 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
-    }
-</script>
+</aside>
+</html>

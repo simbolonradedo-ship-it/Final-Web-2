@@ -22,6 +22,7 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+    // Helper method untuk mendapatkan user yang sedang login
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails) {
@@ -30,6 +31,9 @@ public class CategoryController {
         return null;
     }
 
+    /**
+     * List all categories for current user
+     */
     @GetMapping
     public String listCategories(Model model) {
         User currentUser = getCurrentUser();
@@ -38,9 +42,13 @@ public class CategoryController {
         }
 
         model.addAttribute("categories", categoryService.findAllByUser(currentUser));
+        model.addAttribute("pageTitle", "Kategori");
         return "category/list";
     }
 
+    /**
+     * Show create category form
+     */
     @GetMapping("/new")
     public String showCreateForm(Model model) {
         User currentUser = getCurrentUser();
@@ -49,9 +57,13 @@ public class CategoryController {
         }
 
         model.addAttribute("category", new Category());
+        model.addAttribute("pageTitle", "Kategori baru");
         return "category/form";
     }
 
+    /**
+     * Show edit category form
+     */
     @GetMapping("/{id}/edit")
     public String showEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
         User currentUser = getCurrentUser();
@@ -62,6 +74,7 @@ public class CategoryController {
         return categoryService.findByIdAndUser(id, currentUser)
                 .map(category -> {
                     model.addAttribute("category", category);
+                    model.addAttribute("pageTitle", "Edit kategori");
                     return "category/form";
                 })
                 .orElseGet(() -> {
@@ -70,6 +83,9 @@ public class CategoryController {
                 });
     }
 
+    /**
+     * Save category (create or update)
+     */
     @PostMapping("/save")
     public String saveCategory(@Valid @ModelAttribute Category category, 
                                RedirectAttributes redirectAttributes) {
@@ -90,6 +106,9 @@ public class CategoryController {
         return "redirect:/categories";
     }
 
+    /**
+     * Delete category
+     */
     @PostMapping("/{id}/delete")
     public String deleteCategory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         User currentUser = getCurrentUser();

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+    <div class="main-area">
+        <a th:href="@{/dashboard}" class="back-link">← Dashboard</a>
+        <div class="form-card form-card-lg">
+            <div class="form-card-header">
+                <h1>Profil</h1>
+            </div>
+            <div class="form-card-body">
+                <div th:if="${successMessage}" class="flash flash-success" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}" class="flash flash-error" th:text="${errorMessage}"></div>
+
+                <div class="profile-hero">
+                    <img class="avatar"
+                         th:src="${user.profileImageUrl != null and !user.profileImageUrl.isEmpty() ? user.profileImageUrl : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIyNSIgZmlsbD0iIzY0NzQ4YiIvPjxwYXRoIGQ9Ik0yNSAxMDAgUTE1MCA0MCA3NSAxMDAiIHN0cm9rZT0iIzY0NzQ4YiIgc3Ryb2tlLXdpZHRoPSIxNSIgZmlsbD0ibm9uZSIvPjwvc3ZnPg=='}"
+                         alt="Foto profil">
+                    <div class="profile-meta">
+                        <h2 th:text="${user.fullName}">Nama</h2>
+                        <p class="muted" th:text="${user.username}">username</p>
+                        <p class="muted" th:text="${user.email}">email</p>
+                    </div>
+                </div>
+
+                <dl class="dl-grid">
+                    <div class="dl-row">
+                        <dt>Telepon</dt>
+                        <dd th:text="${user.phoneNumber != null and !user.phoneNumber.isEmpty()} ? ${user.phoneNumber} : '—'">—</dd>
+                    </div>
+                    <div class="dl-row">
+                        <dt>Alamat</dt>
+                        <dd th:text="${user.address != null and !user.address.isEmpty()} ? ${user.address} : '—'">—</dd>
+                    </div>
+                    <div class="dl-row">
+                        <dt>Bio</dt>
+                        <dd th:text="${user.bio != null and !user.bio.isEmpty()} ? ${user.bio} : '—'">—</dd>
+                    </div>
+                    <div class="dl-row">
+                        <dt>Bergabung</dt>
+                        <dd th:text="${user.createdAt != null} ? ${#temporals.format(user.createdAt, 'd MMM yyyy')} : '—'">—</dd>
+                    </div>
+                </dl>
+
+                <div class="row-actions" style="margin:0;margin-top:1.25rem;">
+                    <a th:href="@{/profile/edit}" class="btn btn-primary">Edit profil</a>
+                    <a th:href="@{/profile/change-password}" class="btn btn-secondary">Ubah sandi</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

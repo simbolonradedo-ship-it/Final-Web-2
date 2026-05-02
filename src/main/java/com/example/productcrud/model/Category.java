@@ -7,7 +7,7 @@ import java.util.List;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "categories",
+@Table(name = "categories", 
         uniqueConstraints = {
             @UniqueConstraint(columnNames = { "name", "user_id" })
         })

@@ -16,6 +16,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.Comparator;
 
 @Controller
 public class AuthController {
@@ -53,12 +54,12 @@ public class AuthController {
 
     @PostMapping("/auth/register")
     public String register(@RequestParam String username,
-                           @RequestParam String fullName,
-                           @RequestParam String email,
-                           @RequestParam String password,
-                           @RequestParam String confirmPassword,
-                           Model model,
-                           RedirectAttributes redirectAttributes) {
+                          @RequestParam String fullName,
+                          @RequestParam String email,
+                          @RequestParam String password,
+                          @RequestParam String confirmPassword,
+                          Model model,
+                          RedirectAttributes redirectAttributes) {
         
         if (!password.equals(confirmPassword)) {
             model.addAttribute("errorMessage", "Password dan konfirmasi password tidak cocok!");
@@ -75,7 +76,7 @@ public class AuthController {
             return "register";
         }
 
-        if (userRepository.existsByEmail(email)) {
+        if (email != null && !email.isBlank() && userRepository.existsByEmail(email.trim())) {
             model.addAttribute("errorMessage", "Email sudah digunakan!");
             return "register";
         }
@@ -83,78 +84,80 @@ public class AuthController {
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
-        user.setEmail(email);
+        user.setEmail(email != null && !email.isBlank() ? email.trim() : null);
         user.setFullName(fullName);
         user.setEnabled(true);
 
         userRepository.save(user);
         System.out.println("User registered: " + username);
 
-        String[] defaultCategories = {"Elektronik", "Buku", "Makanan", "Pakaian"};
-        Category[] savedCategories = new Category[4];
-        
-        for (int i = 0; i < defaultCategories.length; i++) {
-            Category cat = new Category();
-            cat.setName(defaultCategories[i]);
-            cat.setDescription("Default category: " + defaultCategories[i]);
-            cat.setUser(user);
-            categoryRepository.save(cat);
-            savedCategories[i] = cat;
+        // Seed katalog demo untuk SETIAP akun agar bisa CRUD penuh (ownership per user).
+        // Target: 5 kategori default + 150 produk demo tersebar merata.
+        String[] defaultCategories = {"Elektronik", "Buku", "Makanan", "Pakaian", "Olahraga"};
+        Map<String, Category> categoryMap = new HashMap<>();
+        for (Category existing : categoryRepository.findByUser(user)) {
+            categoryMap.putIfAbsent(existing.getName(), existing);
         }
-        System.out.println("Default categories created for user: " + username);
+        for (String catName : defaultCategories) {
+            if (!categoryMap.containsKey(catName)) {
+                Category cat = new Category();
+                cat.setName(catName);
+                cat.setDescription("Kategori demo: " + catName);
+                cat.setUser(user);
+                categoryMap.put(catName, categoryRepository.save(cat));
+            }
+        }
 
-        try {
-            Product product1 = new Product();
-            product1.setName("Contoh Laptop");
-            product1.setDescription("Laptop contoh untuk kategori Elektronik");
-            product1.setPrice(10000000);
-            product1.setStock(5);
-            product1.setCategory(savedCategories[0]);
-            product1.setActive(true);
-            product1.setCreatedAt(LocalDate.now());
-            product1.setCreatedBy(username);
-            product1.setUpdatedBy(username);
-            productRepository.save(product1);
+        final int totalDemoProducts = 150;
+        long existingForUser = productRepository.countByCategoryUser(user);
+        if (existingForUser < totalDemoProducts) {
+            int start = (int) existingForUser + 1;
+            LocalDate today = LocalDate.now();
+            List<Product> batch = new ArrayList<>(totalDemoProducts - start + 1);
+            int nCats = defaultCategories.length;
 
-            Product product2 = new Product();
-            product2.setName("Contoh Buku");
-            product2.setDescription("Buku contoh untuk kategori Buku");
-            product2.setPrice(50000);
-            product2.setStock(20);
-            product2.setCategory(savedCategories[1]);
-            product2.setActive(true);
-            product2.setCreatedAt(LocalDate.now());
-            product2.setCreatedBy(username);
-            product2.setUpdatedBy(username);
-            productRepository.save(product2);
+            List<Product> templateProducts = productRepository.findAll().stream()
+                    .sorted(Comparator.comparing(Product::getId))
+                    .limit(totalDemoProducts)
+                    .toList();
 
-            Product product3 = new Product();
-            product3.setName("Contoh Makanan");
-            product3.setDescription("Makanan contoh untuk kategori Makanan");
-            product3.setPrice(25000);
-            product3.setStock(50);
-            product3.setCategory(savedCategories[2]);
-            product3.setActive(true);
-            product3.setCreatedAt(LocalDate.now());
-            product3.setCreatedBy(username);
-            product3.setUpdatedBy(username);
-            productRepository.save(product3);
+            for (int i = start; i <= totalDemoProducts; i++) {
+                Product p = new Product();
 
-            Product product4 = new Product();
-            product4.setName("Contoh Pakaian");
-            product4.setDescription("Pakaian contoh untuk kategori Pakaian");
-            product4.setPrice(150000);
-            product4.setStock(15);
-            product4.setCategory(savedCategories[3]);
-            product4.setActive(true);
-            product4.setCreatedAt(LocalDate.now());
-            product4.setCreatedBy(username);
-            product4.setUpdatedBy(username);
-            productRepository.save(product4);
+                if (!templateProducts.isEmpty()) {
+                    Product tpl = templateProducts.get((i - 1) % templateProducts.size());
+                    String tplCatName = (tpl.getCategory() != null && tpl.getCategory().getName() != null && !tpl.getCategory().getName().isBlank())
+                            ? tpl.getCategory().getName()
+                            : defaultCategories[(i - 1) % nCats];
+                    Category targetCat = categoryMap.getOrDefault(tplCatName, categoryMap.get(defaultCategories[(i - 1) % nCats]));
 
-            System.out.println("Sample products created for user: " + username);
-        } catch (Exception e) {
-            System.err.println("Error creating sample products: " + e.getMessage());
+                    p.setName(tpl.getName() != null && !tpl.getName().isBlank()
+                            ? tpl.getName() + " (demo)"
+                            : (tplCatName + " — Item demo #" + i));
+                    p.setDescription(tpl.getDescription());
+                    p.setPrice(tpl.getPrice());
+                    p.setStock(tpl.getStock());
+                    p.setActive(tpl.isActive());
+                    p.setCategory(targetCat);
+                    p.setCreatedAt(tpl.getCreatedAt() != null ? tpl.getCreatedAt() : today);
+                    p.setCreatedBy(username);
+                    p.setUpdatedBy(username);
+                } else {
+                    String catName = defaultCategories[(i - 1) % nCats];
+                    p.setName(catName + " — Item demo #" + i);
+                    p.setDescription("Produk contoh #" + i + " pada kategori " + catName + " untuk pengujian daftar & pagination.");
+                    p.setPrice(9_000L + (long) i * 7_500L);
+                    p.setStock((i % 120) + 1);
+                    p.setCategory(categoryMap.get(catName));
+                    p.setActive(true);
+                    p.setCreatedAt(today);
+                    p.setCreatedBy(username);
+                    p.setUpdatedBy(username);
+                }
+                batch.add(p);
+            }
+            productRepository.saveAll(batch);
+            System.out.println("Demo catalog seeded for user=" + username + " added=" + batch.size());
         }
 
         redirectAttributes.addFlashAttribute("successMessage", 

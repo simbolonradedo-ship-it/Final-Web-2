@@ -17,6 +17,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                                         Authentication authentication) throws IOException {
         HttpSession session = request.getSession(false);
         if (session != null) {
+             // Redirect ke dashboard setelah login
              response.sendRedirect("/dashboard");
         } else if (authentication != null && authentication.isAuthenticated()) {
             response.sendRedirect("/products?catalog=true");
@@ -25,3 +26,4 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         }
     }
 }
+

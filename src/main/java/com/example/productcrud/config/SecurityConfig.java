@@ -21,7 +21,7 @@ public class SecurityConfig {
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
     private final AuthenticatedUserRedirectFilter authenticatedUserRedirectFilter;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService, 
+    public SecurityConfig(CustomUserDetailsService userDetailsService,
                          CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler,
                          AuthenticatedUserRedirectFilter authenticatedUserRedirectFilter) {
         this.userDetailsService = userDetailsService;
@@ -29,16 +29,20 @@ public class SecurityConfig {
         this.authenticatedUserRedirectFilter = authenticatedUserRedirectFilter;
     }
 
+    /**
+     * Encoder BCrypt untuk semua password pengguna (register, ubah password, seed admin).
+     * Hash disimpan di kolom {@code users.password}; verifikasi login lewat {@link DaoAuthenticationProvider}.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public DaoAuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
@@ -48,14 +52,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                          DaoAuthenticationProvider authenticationProvider) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/auth/login", "/auth/register", "/auth/logout", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**").permitAll()
                 .requestMatchers("/products/new", "/products/*/edit", "/products/*/delete", "/products/save").authenticated()
                 .anyRequest().authenticated()
             )
+            .authenticationProvider(authenticationProvider)
             .addFilterBefore(authenticatedUserRedirectFilter, UsernamePasswordAuthenticationFilter.class)
             .formLogin(form -> form
                 .loginPage("/auth/login")
@@ -72,7 +79,6 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             )
-            .csrf(csrf -> csrf.disable())
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

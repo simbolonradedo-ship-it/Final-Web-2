@@ -16,20 +16,19 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findAllByCategoryUser(User user);
-    
+
     Page<Product> findAllByCategoryUser(User user, Pageable pageable);
-    
+
     @Query("""
-            SELECT p
-            FROM Product p
+            SELECT p FROM Product p
             WHERE p.category.user = :user
               AND (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND (:category IS NULL OR p.category = :category)
             """)
     Page<Product> searchAndFilter(@Param("user") User user,
-                                   @Param("keyword") String keyword,
-                                   @Param("category") Category category,
-                                   Pageable pageable);
+                                  @Param("keyword") String keyword,
+                                  @Param("category") Category category,
+                                  Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.category.user = :user AND LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Product> searchByKeyword(@Param("user") User user,
@@ -49,4 +48,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT SUM(p.price * p.stock) FROM Product p WHERE p.category.user = :user")
     Long sumValueByCategoryUser(@Param("user") User user);
+
+    long countByCategory_Id(Long categoryId);
 }

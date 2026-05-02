@@ -2,8 +2,9 @@ package com.example.productcrud.model;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.*;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "products")
@@ -21,6 +22,7 @@ public class Product {
     private Category category;
 
     public Product() {
+        this.category = new Category();
     }
 
     private long price;
@@ -153,6 +155,7 @@ public class Product {
         return "Product{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", category=" + category +
                 '}';
     }
 }

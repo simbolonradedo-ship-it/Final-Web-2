@@ -56,9 +56,11 @@ public class ProductController {
         User currentUser = getCurrentUser();
         if (currentUser == null) return "redirect:/auth/login";
 
+        // 1. TENTUKAN TARGET USER
         User adminUser = userRepository.findByUsername("admin").orElse(null);
         User targetUser = (catalog && adminUser != null) ? adminUser : currentUser;
 
+        // 2. SIAPKAN DATA
         Pageable pageable = PageRequest.of(page, 10);
         List<Category> filterCategories = categoryService.findAllByUser(targetUser);
         Category category = null;
@@ -66,6 +68,7 @@ public class ProductController {
             category = filterCategories.stream().filter(c -> c.getId().equals(categoryId)).findFirst().orElse(null);
         }
 
+        // 3. QUERY
         Page<Product> productPage;
         boolean hasFilter = (keyword != null && !keyword.trim().isEmpty()) || category != null;
 
@@ -80,6 +83,7 @@ public class ProductController {
             productPage = productService.findAllByUser(targetUser, pageable);
         }
 
+        // 4. KIRIM KE VIEW
         model.addAttribute("products", productPage.getContent());
         model.addAttribute("productPage", productPage);
         model.addAttribute("keyword", keyword);
@@ -87,17 +91,20 @@ public class ProductController {
         model.addAttribute("categories", filterCategories);
         model.addAttribute("isCatalogView", catalog);
         model.addAttribute("isMyProductView", !catalog);
+        model.addAttribute("isSearchOrFilter", hasFilter);
         model.addAttribute("pageTitle", catalog ? "Katalog Produk" : "Produk Saya");
 
         return "product/list";
     }
 
+    // TAMBAH / EDIT PRODUK
     @GetMapping("/products/new")
     public String showCreateForm(Model model) {
         User currentUser = getCurrentUser();
         if (currentUser == null) return "redirect:/auth/login";
         model.addAttribute("product", new Product());
         model.addAttribute("categories", categoryService.findAllByUser(currentUser));
+        model.addAttribute("pageTitle", "Produk baru");
         return "product/form";
     }
 
@@ -136,6 +143,7 @@ public class ProductController {
                 .map(p -> {
                     model.addAttribute("product", p);
                     model.addAttribute("categories", categoryService.findAllByUser(currentUser));
+                    model.addAttribute("pageTitle", "Edit produk");
                     return "product/form";
                 }).orElseGet(() -> {
                     ra.addFlashAttribute("errorMessage", "Produk tidak ditemukan");
@@ -143,6 +151,7 @@ public class ProductController {
                 });
     }
 
+    // HAPUS PRODUK
     @PostMapping("/products/{id}/delete")
     public String deleteProduct(@PathVariable Long id, RedirectAttributes ra) {
         User currentUser = getCurrentUser();
@@ -156,6 +165,7 @@ public class ProductController {
         return "redirect:/products";
     }
 
+    // DETAIL PRODUK
     @GetMapping("/products/{id}")
     public String detailProduct(@PathVariable Long id, Model model, RedirectAttributes ra) {
         User currentUser = getCurrentUser();
@@ -163,6 +173,7 @@ public class ProductController {
         return productService.findByIdAndUser(id, currentUser)
                 .map(p -> {
                     model.addAttribute("product", p);
+                    model.addAttribute("pageTitle", p.getName());
                     return "product/detail";
                 }).orElseGet(() -> {
                     ra.addFlashAttribute("errorMessage", "Produk tidak ditemukan");
@@ -170,6 +181,7 @@ public class ProductController {
                 });
     }
 
+    // DASHBOARD
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         User currentUser = getCurrentUser();

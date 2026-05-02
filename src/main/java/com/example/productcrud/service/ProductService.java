@@ -41,7 +41,9 @@ public class ProductService {
     }
 
     public Page<Product> findByCategory(User user, Category category, Pageable pageable) {
+        // Pastikan category tidak null agar query aman (meskipun controller sudah dicek)
         if (category == null) {
+            // Jika null, fallback ke cari semua saja
             return findAllByUser(user, pageable);
         }
         return productRepository.findAllByCategoryUserAndCategory(user, category, pageable);

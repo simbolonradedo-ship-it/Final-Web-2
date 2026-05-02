@@ -1,110 +1,77 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: header}">
-</head>
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-violet-900">
-    <nav th:replace="~{fragments/layout :: navbar}"></nav>
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+    <div class="main-area">
+        <a th:href="@{/products}" class="back-link">← Kembali</a>
+        <div class="form-card">
+            <div class="form-card-header">
+                <h1 th:text="${product.id != null} ? 'Edit produk' : 'Produk baru'">Form</h1>
+            </div>
+            <div class="form-card-body">
+                <div th:if="${errorMessage}" class="flash flash-error" th:text="${errorMessage}"></div>
+                <form th:action="@{/products/save}" th:object="${product}" method="post" class="form-grid">
+                    <input type="hidden" th:field="*{id}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div class="mb-10 animate-fade-in-up">
-            <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-3 font-['Space_Grotesk']" th:text="${product.id != null} ? 'Edit Produk' : 'Tambah Produk Baru'">Form Produk</h2>
-            <p class="text-gray-400 mt-2" th:text="${product.id != null} ? 'Perbarui informasi produk di bawah ini' : 'Isi form berikut untuk menambahkan produk baru'"></p>
-        </div>
-
-        <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20 animate-fade-in-up" style="animation-delay: 150ms;">
-            <form th:action="${product.id != null ? @{/products/{id}(id=${product.id})} : @{/products}}" th:object="${product}" method="post" class="space-y-6">
-                <input type="hidden" th:field="*{id}">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <input type="hidden" name="_method" th:value="${product.id != null ? 'PUT' : 'POST'}" th:if="${product.id != null}"/>
-
-                
-                <div class="form-group">
-                    <label for="name" class="form-label text-gray-300">Nama Produk</label>
-                    <input type="text" class="form-control bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500" 
-                           id="name" th:field="*{name}" 
-                           placeholder="Masukkan nama produk" required
-                           th:classappend="${#fields.hasErrors('name')} ? 'form-error' : ''">
-                    <div th:if="${#fields.hasErrors('name')}" class="mt-1 text-sm text-red-400" th:errors="*{name}"></div>
-                </div>
-
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="form-group">
-                        <label for="price" class="form-label text-gray-300">Harga (Rp)</label>
-                        <input type="number" class="form-control bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500" 
-                               id="price" th:field="*{price}" 
-                               placeholder="0" required min="0"
-                               th:classappend="${#fields.hasErrors('price')} ? 'form-error' : ''">
-                        <div th:if="${#fields.hasErrors('price')}" class="mt-1 text-sm text-red-400" th:errors="*{price}"></div>
+                    <div>
+                        <label class="form-label" for="name">Nama</label>
+                        <input class="input" style="max-width:none;width:100%;" id="name" th:field="*{name}" required placeholder="Nama produk">
                     </div>
-                    <div class="form-group">
-                        <label for="stock" class="form-label text-gray-300">Stok</label>
-                        <input type="number" class="form-control bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500" 
-                               id="stock" th:field="*{stock}" 
-                               placeholder="0" required min="0"
-                               th:classappend="${#fields.hasErrors('stock')} ? 'form-error' : ''">
-                        <div th:if="${#fields.hasErrors('stock')}" class="mt-1 text-sm text-red-400" th:errors="*{stock}"></div>
+
+                    <div>
+                        <label class="form-label" for="category">Kategori</label>
+                        <select class="input" style="max-width:none;width:100%;" id="category" th:field="*{category.id}" required>
+                            <option value="">Pilih…</option>
+                            <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
+                        </select>
                     </div>
-                </div>
 
-                
-                <div class="form-group">
-                    <label for="category" class="form-label text-gray-300">Kategori</label>
-                    <select class="form-control bg-white/5 border-white/20 text-white focus:border-primary-500 focus:ring-primary-500" 
-                            id="category" th:field="*{category}" required>
-                        <option value="" class="text-gray-900">Pilih Kategori</option>
-                        <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}" 
-                                th:selected="${product.category != null && product.category.id == cat.id}" class="text-gray-900">
-                        </option>
-                    </select>
-                </div>
-
-                
-                <div class="form-group">
-                    <label for="description" class="form-label text-gray-300">Deskripsi (Opsional)</label>
-                    <textarea class="form-control bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500" 
-                              id="description" th:field="*{description}" rows="4" 
-                              placeholder="Masukkan deskripsi produk"></textarea>
-                </div>
-
-                
-                <div class="form-group">
-                    <label class="form-label text-gray-300">Status</label>
-                    <div class="flex items-center gap-4">
-                        <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
-                            <input type="radio" th:field="*{active}" th:value="true" class="accent-primary-500">
-                            Aktif
-                        </label>
-                        <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
-                            <input type="radio" th:field="*{active}" th:value="false" class="accent-primary-500">
-                            Tidak Aktif
-                        </label>
+                    <div class="form-grid form-grid-2">
+                        <div>
+                            <label class="form-label" for="priceDisplay">Harga (Rp)</label>
+                            <input class="input" style="max-width:none;width:100%;" type="text" id="priceDisplay" required placeholder="0">
+                            <input type="hidden" th:field="*{price}" id="price">
+                        </div>
+                        <div>
+                            <label class="form-label" for="stock">Stok</label>
+                            <input class="input" style="max-width:none;width:100%;" type="number" id="stock" th:field="*{stock}" required min="0">
+                        </div>
                     </div>
-                </div>
 
-                
-                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/20">
-                    <a th:href="@{/products}" class="group flex-1 justify-center items-center bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3 rounded-xl transition-all border border-white/20 hover:border-white/30">
-                        <span class="flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                            Batal
-                        </span>
-                    </a>
-                    <button type="submit" class="group flex-1 justify-center items-center bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                        <span class="flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            Simpan Produk
-                        </span>
-                    </button>
-                </div>
-            </form>
+                    <div>
+                        <label class="form-label" for="description">Deskripsi</label>
+                        <textarea class="input" style="max-width:none;width:100%;min-height:100px;" id="description" th:field="*{description}" rows="4"></textarea>
+                    </div>
+
+                    <div class="card" style="margin:0;display:flex;align-items:center;gap:0.75rem;">
+                        <input type="checkbox" id="active" th:field="*{active}">
+                        <label for="active" style="margin:0;">Produk aktif</label>
+                    </div>
+
+                    <div class="row-actions" style="margin:0;">
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <a th:href="@{/products}" class="btn btn-secondary">Batal</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-
-    <footer th:replace="~{fragments/layout :: footer}"></footer>
+</div>
+<script>
+    const priceHidden = document.getElementById('price');
+    const priceDisplay = document.getElementById('priceDisplay');
+    function formatThousand(value) { return Number(value).toLocaleString('id-ID'); }
+    if (priceHidden.value && priceHidden.value !== '0') {
+        priceDisplay.value = formatThousand(priceHidden.value);
+    }
+    priceDisplay.addEventListener('input', function () {
+        const raw = this.value.replace(/\./g, '').replace(/\D/g, '');
+        priceHidden.value = raw;
+        this.value = raw ? formatThousand(raw) : '';
+    });
+</script>
 </body>
 </html>

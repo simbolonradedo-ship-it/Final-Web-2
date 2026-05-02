@@ -3,6 +3,7 @@ package com.example.productcrud.service;
 import com.example.productcrud.model.Category;
 import com.example.productcrud.model.User;
 import com.example.productcrud.repository.CategoryRepository;
+import com.example.productcrud.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,9 +13,11 @@ import java.util.Optional;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, ProductRepository productRepository) {
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     public List<Category> findAllByUser(User user) {
@@ -32,36 +35,34 @@ public class CategoryService {
 
     public Category save(Category category, User user) {
         category.setUser(user);
-        
+
         if (category.getName() != null && category.getName().trim().length() > 0) {
             String normalizedName = category.getName().trim();
             boolean exists = categoryRepository.existsByNameAndUser(normalizedName, user);
             if (exists && (category.getId() == null)) {
                 throw new IllegalArgumentException(
-                    "Category dengan nama '" + normalizedName + "' sudah ada untuk user Anda"
+                        "Category dengan nama '" + normalizedName + "' sudah ada untuk user Anda"
                 );
             }
         }
-        
+
         return categoryRepository.save(category);
     }
 
     public void deleteByIdAndUser(Long id, User user) {
         Optional<Category> categoryOpt = findByIdAndUser(id, user);
-        
-        if (!categoryOpt.isPresent()) {
+
+        if (categoryOpt.isEmpty()) {
             throw new IllegalArgumentException("Category tidak ditemukan atau bukan milik Anda");
         }
-        
-        Category category = categoryOpt.get();
-        
-        long productCount = category.getProducts() != null ? category.getProducts().size() : 0;
+
+        long productCount = productRepository.countByCategory_Id(id);
         if (productCount > 0) {
             throw new IllegalStateException(
-                "Tidak dapat menghapus category yang masih digunakan oleh " + productCount + " produk"
+                    "Tidak dapat menghapus category yang masih digunakan oleh " + productCount + " produk"
             );
         }
-        
-        categoryRepository.delete(category);
+
+        categoryRepository.delete(categoryOpt.get());
     }
 }

@@ -33,7 +33,7 @@ public class User {
     @Column(length = 500)
     private String bio;
     
-    @Column(length = 255)
+    @Column(columnDefinition = "TEXT")
     private String profileImageUrl;
     
     @Column(nullable = false)

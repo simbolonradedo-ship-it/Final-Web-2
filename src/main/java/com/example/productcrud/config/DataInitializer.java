@@ -9,103 +9,230 @@ import com.example.productcrud.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Configuration
 public class DataInitializer {
 
+    private static final String[] DEFAULT_CATEGORIES = {
+            "Elektronik", "Buku", "Makanan", "Pakaian", "Olahraga"
+    };
+
+    private static final int TOTAL_DEMO_PRODUCTS = 150;
+
     @Bean
-    public CommandLineRunner initData(UserRepository userRepository, 
+    @Order(2)
+    public CommandLineRunner initData(UserRepository userRepository,
                                        CategoryRepository categoryRepository,
                                        ProductRepository productRepository,
-                                       PasswordEncoder passwordEncoder) {
-        return args -> {
-            seedIfDatabaseEmpty(userRepository, categoryRepository, productRepository, passwordEncoder);
-        };
+                                       PasswordEncoder passwordEncoder,
+                                       TransactionTemplate transactionTemplate) {
+        return args -> transactionTemplate.executeWithoutResult(status -> {
+            repairLegacyNullReferences(userRepository, categoryRepository, productRepository);
+            rehashPasswordsIfNotBcrypt(userRepository, passwordEncoder);
+            seedIfNeeded(userRepository, categoryRepository, productRepository, passwordEncoder);
+        });
     }
 
-    @Transactional
-    protected void seedIfDatabaseEmpty(UserRepository userRepository,
-                                       CategoryRepository categoryRepository,
-                                       ProductRepository productRepository,
-                                       PasswordEncoder passwordEncoder) {
-        boolean hasAnyData = userRepository.count() > 0 || categoryRepository.count() > 0 || productRepository.count() > 0;
-        if (hasAnyData) {
-            System.out.println("Database sudah terisi. Melewati inisialisasi data awal.");
+    /**
+     * Migrasi sekali jalan: password teks polos di DB di-hash BCrypt agar login memakai {@link DaoAuthenticationProvider}.
+     */
+    private void rehashPasswordsIfNotBcrypt(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        for (User u : userRepository.findAll()) {
+            String stored = u.getPassword();
+            if (stored == null || stored.isBlank()) {
+                continue;
+            }
+            if (looksLikeBcryptHash(stored)) {
+                continue;
+            }
+            u.setPassword(passwordEncoder.encode(stored));
+            userRepository.save(u);
+        }
+        userRepository.flush();
+    }
+
+    private static boolean looksLikeBcryptHash(String value) {
+        return value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$");
+    }
+
+    private void repairLegacyNullReferences(UserRepository userRepository,
+                                            CategoryRepository categoryRepository,
+                                            ProductRepository productRepository) {
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            return;
+        }
+        User fallbackUser = users.get(0);
+
+        Set<String> takenNames = new HashSet<>();
+        for (Category c : categoryRepository.findAll()) {
+            if (c.getUser() != null && c.getUser().getId().equals(fallbackUser.getId())) {
+                takenNames.add(c.getName());
+            }
+        }
+
+        for (Category c : categoryRepository.findAll()) {
+            if (c.getUser() != null) {
+                continue;
+            }
+            String baseName = c.getName() != null && !c.getName().isBlank() ? c.getName() : "Kategori";
+            String uniqueName = nextUniqueCategoryName(baseName, takenNames);
+            takenNames.add(uniqueName);
+            c.setName(uniqueName);
+            c.setUser(fallbackUser);
+            categoryRepository.save(c);
+        }
+        categoryRepository.flush();
+
+        List<Category> allCategories = categoryRepository.findAll();
+        if (allCategories.isEmpty()) {
+            return;
+        }
+        Category fallbackCategory = allCategories.get(0);
+
+        for (Product p : productRepository.findAll()) {
+            boolean changed = false;
+            if (p.getCategory() == null) {
+                p.setCategory(fallbackCategory);
+                changed = true;
+            }
+            if (changed) {
+                productRepository.save(p);
+            }
+        }
+        productRepository.flush();
+    }
+
+    private void seedIfNeeded(UserRepository userRepository,
+                              CategoryRepository categoryRepository,
+                              ProductRepository productRepository,
+                              PasswordEncoder passwordEncoder) {
+
+        if (userRepository.count() == 0) {
+            User admin = new User();
+            admin.setUsername("admin");
+            admin.setEmail("admin@example.com");
+            admin.setFullName("Admin User");
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setEnabled(true);
+            userRepository.save(admin);
+            System.out.println("User admin dibuat (password demo: admin123).");
+        }
+
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
             return;
         }
 
-        User admin = new User();
-        admin.setUsername("admin");
-        admin.setEmail("admin@example.com");
-        admin.setFullName("Admin User");
-        admin.setPassword(passwordEncoder.encode("admin123"));
-        admin.setEnabled(true);
-        userRepository.save(admin);
+        int nCats = DEFAULT_CATEGORIES.length;
 
-        String[] defaultCategories = {"Elektronik", "Buku", "Makanan", "Pakaian"};
-        Map<String, Category> categoryMap = new HashMap<>();
-        Arrays.stream(defaultCategories).forEach(name -> {
-            Category cat = new Category();
-            cat.setName(name);
-            cat.setDescription("Default category: " + name);
-            cat.setUser(admin);
-            categoryRepository.save(cat);
-            categoryMap.put(name, cat);
-        });
+        // Ambil "template" dari tabel products (kalau ada) untuk dijadikan sumber demo.
+        // Karena ownership berbasis category.user, tiap user tetap mendapat COPY produknya sendiri.
+        List<Product> templateProducts = productRepository.findAll().stream()
+                .sorted(Comparator.comparing(Product::getId))
+                .limit(TOTAL_DEMO_PRODUCTS)
+                .toList();
+        for (User u : users) {
+            Map<String, Category> categoryMap = ensureDefaultCategories(u, categoryRepository);
 
-        Product p1 = new Product();
-        p1.setName("Laptop Ultrabook 14\"");
-        p1.setCategory(categoryMap.get("Elektronik"));
-        p1.setPrice(18500000);
-        p1.setStock(12);
-        p1.setDescription("Ringan, kencang, baterai awet. Cocok untuk kerja & kuliah.");
-        p1.setActive(true);
-        p1.setCreatedAt(LocalDate.now());
-        p1.setCreatedBy(admin.getUsername());
-        p1.setUpdatedBy(admin.getUsername());
+            long existingForUser = productRepository.countByCategoryUser(u);
+            if (existingForUser >= TOTAL_DEMO_PRODUCTS) {
+                continue;
+            }
 
-        Product p2 = new Product();
-        p2.setName("Buku Clean Code");
-        p2.setCategory(categoryMap.get("Buku"));
-        p2.setPrice(175000);
-        p2.setStock(40);
-        p2.setDescription("Buku klasik untuk menulis kode yang rapi dan maintainable.");
-        p2.setActive(true);
-        p2.setCreatedAt(LocalDate.now());
-        p2.setCreatedBy(admin.getUsername());
-        p2.setUpdatedBy(admin.getUsername());
+            int start = (int) existingForUser + 1;
+            List<Product> batch = new ArrayList<>(TOTAL_DEMO_PRODUCTS - start + 1);
+            LocalDate today = LocalDate.now();
+            String username = u.getUsername();
 
-        Product p3 = new Product();
-        p3.setName("Snack Granola 250g");
-        p3.setCategory(categoryMap.get("Makanan"));
-        p3.setPrice(45000);
-        p3.setStock(100);
-        p3.setDescription("Cemilan sehat dengan rasa madu dan kacang.");
-        p3.setActive(true);
-        p3.setCreatedAt(LocalDate.now());
-        p3.setCreatedBy(admin.getUsername());
-        p3.setUpdatedBy(admin.getUsername());
+            for (int i = start; i <= TOTAL_DEMO_PRODUCTS; i++) {
+                Product p = new Product();
 
-        Product p4 = new Product();
-        p4.setName("Hoodie Oversize Premium");
-        p4.setCategory(categoryMap.get("Pakaian"));
-        p4.setPrice(289000);
-        p4.setStock(25);
-        p4.setDescription("Bahan tebal, lembut, dan nyaman dipakai sehari-hari.");
-        p4.setActive(true);
-        p4.setCreatedAt(LocalDate.now());
-        p4.setCreatedBy(admin.getUsername());
-        p4.setUpdatedBy(admin.getUsername());
+                if (!templateProducts.isEmpty()) {
+                    // Clone dari produk yang sudah ada di tabel products
+                    Product tpl = templateProducts.get((i - 1) % templateProducts.size());
+                    String tplCatName = (tpl.getCategory() != null && tpl.getCategory().getName() != null && !tpl.getCategory().getName().isBlank())
+                            ? tpl.getCategory().getName()
+                            : DEFAULT_CATEGORIES[(i - 1) % nCats];
 
-        productRepository.saveAll(Arrays.asList(p1, p2, p3, p4));
+                    // Pastikan kategori untuk user ada (kalau template pakai kategori lain, fallback ke default)
+                    Category targetCat = categoryMap.getOrDefault(tplCatName, categoryMap.get(DEFAULT_CATEGORIES[(i - 1) % nCats]));
 
-        System.out.println("Default admin, categories, & products created.");
+                    p.setName(tpl.getName() != null && !tpl.getName().isBlank()
+                            ? tpl.getName() + " (demo)"
+                            : (tplCatName + " — Item demo #" + i));
+                    p.setDescription(tpl.getDescription());
+                    p.setPrice(tpl.getPrice());
+                    p.setStock(tpl.getStock());
+                    p.setActive(tpl.isActive());
+                    p.setCategory(targetCat);
+
+                    // Audit: selalu atas nama pemilik akun ini
+                    p.setCreatedAt(tpl.getCreatedAt() != null ? tpl.getCreatedAt() : today);
+                    p.setCreatedBy(username);
+                    p.setUpdatedBy(username);
+                } else {
+                    // Fallback: generate demo seperti sebelumnya kalau tabel products masih kosong
+                    String catName = DEFAULT_CATEGORIES[(i - 1) % nCats];
+                    p.setName(catName + " — Item demo #" + i);
+                    p.setDescription("Produk contoh #" + i + " pada kategori " + catName + " untuk pengujian daftar & pagination.");
+                    p.setPrice(9_000L + (long) i * 7_500L);
+                    p.setStock((i % 120) + 1);
+                    p.setCategory(categoryMap.get(catName));
+                    p.setActive(true);
+                    p.setCreatedAt(today);
+                    p.setCreatedBy(username);
+                    p.setUpdatedBy(username);
+                }
+                batch.add(p);
+            }
+
+            productRepository.saveAll(batch);
+            System.out.println("Demo: user=" + username + " ditambahkan " + batch.size()
+                    + " produk (#" + start + "–#" + TOTAL_DEMO_PRODUCTS + "), kategori=" + nCats
+                    + ", total user sekarang=" + productRepository.countByCategoryUser(u));
+        }
+    }
+
+    /**
+     * Pastikan ada satu {@link Category} per nama default untuk pemiliknya (tanpa duplikat nama+user).
+     */
+    private Map<String, Category> ensureDefaultCategories(User owner, CategoryRepository categoryRepository) {
+        Map<String, Category> map = new HashMap<>();
+        for (Category existing : categoryRepository.findByUser(owner)) {
+            map.putIfAbsent(existing.getName(), existing);
+        }
+        for (String name : DEFAULT_CATEGORIES) {
+            if (!map.containsKey(name)) {
+                Category cat = new Category();
+                cat.setName(name);
+                cat.setDescription("Kategori demo: " + name);
+                cat.setUser(owner);
+                map.put(name, categoryRepository.save(cat));
+            }
+        }
+        return map;
+    }
+
+    private static String nextUniqueCategoryName(String base, Set<String> taken) {
+        String candidate = base;
+        int suffix = 1;
+        while (taken.contains(candidate)) {
+            candidate = base + " (" + suffix + ")";
+            suffix++;
+        }
+        return candidate;
     }
 }

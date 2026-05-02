@@ -1,84 +1,36 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: header}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masuk — Aurora Stock</title>
+    <link th:href="@{/css/app.css}" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
-    <div class="w-full max-w-md animate-fade-in-up">
-        
-        <div class="text-center mb-10">
-            <div class="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl mb-6 border border-white/20">
-                <i class="fas fa-box text-primary-400 text-4xl"></i>
-            </div>
-            <h1 class="text-4xl font-extrabold text-white mb-2 font-['Space_Grotesk']">ProductCRUD</h1>
-            <p class="text-gray-400">Masuk ke akun Anda</p>
+<body class="auth-body">
+<div class="auth-card">
+    <div class="auth-logo">◆</div>
+    <h1 class="auth-title">Aurora Stock</h1>
+    <p class="auth-sub">Masuk untuk mengelola inventori</p>
+
+    <div th:if="${successMessage}" class="flash flash-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="flash flash-error" th:text="${errorMessage}"></div>
+
+    <form th:action="@{/auth/login}" method="post" class="form-grid">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div>
+            <label class="form-label" for="username">Username</label>
+            <input class="input" style="max-width:none;width:100%;" id="username" name="username" required autocomplete="username">
         </div>
-
-        
-        <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-10 border border-white/20">
-            
-            <div th:if="${successMessage}" class="mb-6 p-4 bg-green-500/20 border-l-4 border-green-500 rounded-r-xl flex items-center gap-4 animate-fade-in-left">
-                <i class="fas fa-check-circle text-green-400 text-xl"></i>
-                <span class="text-green-100 text-sm" th:text="${successMessage}"></span>
-            </div>
-
-            
-            <div th:if="${errorMessage}" class="mb-6 p-4 bg-red-500/20 border-l-4 border-red-500 rounded-r-xl flex items-center gap-4 animate-fade-in-left">
-                <i class="fas fa-exclamation-circle text-red-400 text-xl"></i>
-                <span class="text-red-100 text-sm" th:text="${errorMessage}"></span>
-            </div>
-
-            <form th:action="@{/auth/login}" method="post" class="space-y-6">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-
-                
-                <div>
-                    <label for="username" class="block text-sm font-semibold text-gray-300 mb-2">Username</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fas fa-user text-gray-500"></i>
-                        </div>
-                        <input type="text" id="username" name="username" required autofocus
-                               class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all outline-none">
-                    </div>
-                </div>
-
-                
-                <div>
-                    <label for="password" class="block text-sm font-semibold text-gray-300 mb-2">Password</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fas fa-lock text-gray-500"></i>
-                        </div>
-                        <input type="password" id="password" name="password" required
-                               class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all outline-none">
-                    </div>
-                </div>
-
-                
-                <button type="submit" 
-                        class="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold py-4 px-4 rounded-xl hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg hover:shadow-2xl transform hover:-translate-y-0.5 group relative overflow-hidden">
-                    <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <span class="relative flex items-center justify-center gap-2">
-                        <i class="fas fa-sign-in-alt"></i>Login
-                    </span>
-                </button>
-            </form>
-
-            
-            <div class="mt-8 text-center">
-                <p class="text-gray-500">
-                    Belum punya akun? 
-                    <a th:href="@{/auth/register}" class="text-primary-400 hover:text-primary-300 font-semibold transition-colors underline decoration-primary-400 decoration-2 underline-offset-4">
-                        Daftar sekarang
-                    </a>
-                </p>
-            </div>
+        <div>
+            <label class="form-label" for="password">Password</label>
+            <input class="input" style="max-width:none;width:100%;" type="password" id="password" name="password" required autocomplete="current-password">
         </div>
-
-        
-        <div class="text-center mt-10">
-            <p class="text-gray-600 text-sm">© 2026 ProductCRUD. Hak Cipta Dilindungi.</p>
-        </div>
-    </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">Masuk</button>
+    </form>
+    <p style="text-align:center;margin-top:1.25rem;font-size:0.9rem;color:var(--text-muted);">
+        Belum punya akun?
+        <a th:href="@{/auth/register}" style="color:var(--accent);font-weight:600;">Daftar</a>
+    </p>
+</div>
 </body>
 </html>

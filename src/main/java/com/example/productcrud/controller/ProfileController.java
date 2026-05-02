@@ -1,15 +1,19 @@
 package com.example.productcrud.controller;
 
+import com.example.productcrud.dto.ChangePasswordDTO;
 import com.example.productcrud.model.User;
 import com.example.productcrud.repository.UserRepository;
 import com.example.productcrud.service.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,54 +49,89 @@ public class ProfileController {
         this.passwordEncoder = passwordEncoder;
     }
 
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            Object principal = auth.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                return ((CustomUserDetails) principal).getUser();
+            } else if (principal instanceof User) {
+                return (User) principal;
+            }
+        }
+        return null;
+    }
+
+    private void refreshAuthentication(User user) {
+        User fromDb = userRepository.findById(user.getId()).orElseThrow();
+        CustomUserDetails updated = new CustomUserDetails(fromDb);
+        Authentication newAuth = new UsernamePasswordAuthenticationToken(
+                updated, null, updated.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
+    }
+
     @GetMapping
-    public String profile(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
-        User user = userRepository.findByUsername(principal.getUsername()).orElseThrow();
+    public String viewProfile(Model model) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+        User user = userRepository.findById(currentUser.getId()).orElseThrow();
         model.addAttribute("user", user);
-        return "profile";
+        model.addAttribute("pageTitle", "Profil");
+        return "profile/view-profile";
     }
 
     @GetMapping("/edit")
-    public String editForm(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
-        User user = userRepository.findByUsername(principal.getUsername()).orElseThrow();
+    public String editForm(Model model) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+        User user = userRepository.findById(currentUser.getId()).orElseThrow();
         model.addAttribute("user", user);
-        return "profile-edit";
+        model.addAttribute("pageTitle", "Edit profil");
+        return "profile/edit-profile";
     }
 
-    @GetMapping("/password")
-    public String changePasswordForm() {
-        return "profile-password";
-    }
-
-    @PostMapping("/password")
-    public String changePasswordSubmit(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestParam String currentPassword,
-            @RequestParam String newPassword,
-            @RequestParam String confirmPassword,
-            RedirectAttributes redirectAttributes) {
-
-        User user = userRepository.findByUsername(principal.getUsername()).orElseThrow();
-
-        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Password saat ini salah.");
-            return "redirect:/profile/password";
+    @GetMapping("/change-password")
+    public String changePasswordForm(Model model) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
         }
-        if (!newPassword.equals(confirmPassword)) {
+        model.addAttribute("changePasswordDTO", new ChangePasswordDTO());
+        model.addAttribute("pageTitle", "Ubah sandi");
+        return "profile/change-password";
+    }
+
+    @PostMapping("/change-password")
+    public String changePassword(@ModelAttribute ChangePasswordDTO dto, RedirectAttributes redirectAttributes) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+
+        if (!passwordEncoder.matches(dto.getOldPassword(), currentUser.getPassword())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Password lama tidak sesuai.");
+            return "redirect:/profile/change-password";
+        }
+        if (!dto.getNewPassword().equals(dto.getConfirmNewPassword())) {
             redirectAttributes.addFlashAttribute("errorMessage", "Password baru dan konfirmasi tidak cocok.");
-            return "redirect:/profile/password";
+            return "redirect:/profile/change-password";
         }
-        if (newPassword.length() < 6) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Password baru minimal 6 karakter.");
-            return "redirect:/profile/password";
+        if (dto.getNewPassword().length() < 6) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Password minimal 6 karakter.");
+            return "redirect:/profile/change-password";
         }
-        if (newPassword.equals(currentPassword)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Password baru harus berbeda dari password saat ini.");
-            return "redirect:/profile/password";
+        if (dto.getNewPassword().equals(dto.getOldPassword())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Password baru harus berbeda dari password lama.");
+            return "redirect:/profile/change-password";
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
+        currentUser.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(currentUser);
+        refreshAuthentication(currentUser);
 
         redirectAttributes.addFlashAttribute("successMessage", "Password berhasil diubah.");
         return "redirect:/profile";
@@ -100,19 +139,18 @@ public class ProfileController {
 
     @PostMapping("/edit")
     public String editSubmit(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestParam(required = false) String fullName,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String phoneNumber,
-            @RequestParam(required = false) String address,
-            @RequestParam(required = false) String bio,
+            @ModelAttribute User formUser,
             @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
             RedirectAttributes redirectAttributes) throws IOException {
 
-        User user = userRepository.findByUsername(principal.getUsername()).orElseThrow();
+        User user = getCurrentUser();
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
+        user = userRepository.findById(user.getId()).orElseThrow();
 
-        if (StringUtils.hasText(email)) {
-            String trimmedEmail = email.trim();
+        if (StringUtils.hasText(formUser.getEmail())) {
+            String trimmedEmail = formUser.getEmail().trim();
             Optional<User> emailOwner = userRepository.findByEmail(trimmedEmail);
             if (emailOwner.isPresent() && !emailOwner.get().getId().equals(user.getId())) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Email sudah digunakan akun lain.");
@@ -123,12 +161,12 @@ public class ProfileController {
             user.setEmail(null);
         }
 
-        if (StringUtils.hasText(fullName)) {
-            user.setFullName(fullName.trim());
+        if (StringUtils.hasText(formUser.getFullName())) {
+            user.setFullName(formUser.getFullName().trim());
         }
-        user.setPhoneNumber(StringUtils.hasText(phoneNumber) ? phoneNumber.trim() : null);
-        user.setAddress(StringUtils.hasText(address) ? address.trim() : null);
-        user.setBio(StringUtils.hasText(bio) ? bio.trim() : null);
+        user.setPhoneNumber(StringUtils.hasText(formUser.getPhoneNumber()) ? formUser.getPhoneNumber().trim() : null);
+        user.setAddress(StringUtils.hasText(formUser.getAddress()) ? formUser.getAddress().trim() : null);
+        user.setBio(StringUtils.hasText(formUser.getBio()) ? formUser.getBio().trim() : null);
 
         if (profileImage != null && !profileImage.isEmpty()) {
             String contentType = profileImage.getContentType();
@@ -153,6 +191,7 @@ public class ProfileController {
         }
 
         userRepository.save(user);
+        refreshAuthentication(user);
 
         redirectAttributes.addFlashAttribute("successMessage", "Profil berhasil diperbarui.");
         return "redirect:/profile";
