@@ -2,13 +2,20 @@ package com.example.productcrud.controller;
 
 import com.example.productcrud.model.Product;
 import com.example.productcrud.service.ProductService;
+import com.example.productcrud.util.PaginationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 @Controller
 public class ProductController {
@@ -21,8 +28,8 @@ public class ProductController {
     }
 
     @GetMapping("/")
-    public String index() {
-        return "redirect:/products";
+    public String home() {
+        return "index";
     }
 
     @GetMapping("/products")
@@ -35,43 +42,31 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             Model model) {
-        
-        List<Product> allProducts;
-        
-        if (search != null && !search.trim().isEmpty()) {
-            allProducts = productService.findByNameContainingIgnoreCase(search.trim());
-        } else {
-            allProducts = productService.findAll();
+
+        int pageSize = Math.min(50, Math.max(1, size));
+        int pageIndex = Math.max(0, page);
+
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by("id").ascending());
+        Page<Product> productPage = productService.findFilteredPage(
+                search, minPrice, maxPrice, minStock, maxStock, pageable);
+
+        if (productPage.getTotalPages() > 0 && pageIndex >= productPage.getTotalPages()) {
+            pageIndex = productPage.getTotalPages() - 1;
+            pageable = PageRequest.of(pageIndex, pageSize, Sort.by("id").ascending());
+            productPage = productService.findFilteredPage(
+                    search, minPrice, maxPrice, minStock, maxStock, pageable);
         }
-        
-        // Apply filters
-        if (minPrice != null || maxPrice != null || minStock != null || maxStock != null) {
-            allProducts = allProducts.stream()
-                    .filter(p -> minPrice == null || p.getPrice() >= minPrice)
-                    .filter(p -> maxPrice == null || p.getPrice() <= maxPrice)
-                    .filter(p -> minStock == null || p.getStock() >= minStock)
-                    .filter(p -> maxStock == null || p.getStock() <= maxStock)
-                    .collect(java.util.stream.Collectors.toList());
-        }
-        
-        // Manual pagination
-        int start = page * size;
-        int end = Math.min(start + size, allProducts.size());
-        List<Product> pagedProducts = start < allProducts.size() 
-            ? allProducts.subList(start, end) 
-            : java.util.Collections.emptyList();
-        
-        int totalPages = (int) Math.ceil((double) allProducts.size() / size);
-        
-        model.addAttribute("products", pagedProducts);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalItems", allProducts.size());
+
+        model.addAttribute("productPage", productPage);
+        model.addAttribute("pageSize", pageSize);
         model.addAttribute("search", search);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("minStock", minStock);
         model.addAttribute("maxStock", maxStock);
+
+        PaginationUtil.addPageWindow(model, productPage.getNumber(), productPage.getTotalPages());
+
         return "product/list";
     }
 

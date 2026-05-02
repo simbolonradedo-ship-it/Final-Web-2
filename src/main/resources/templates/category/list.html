@@ -19,6 +19,7 @@
         <!-- Search & Filter -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <form method="get" action="#" th:action="@{/categories}" class="flex flex-col md:flex-row gap-4">
+                <input type="hidden" name="size" th:value="${pageSize}">
                 <div class="flex-1">
                     <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Cari Kategori</label>
                     <div class="relative">
@@ -40,7 +41,7 @@
                         </svg>
                         Cari
                     </button>
-                    <a th:href="@{/categories}" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors">
+                    <a th:href="@{/categories(size=${pageSize})}" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors">
                         Reset
                     </a>
                 </div>
@@ -60,9 +61,9 @@
             <span th:text="${errorMessage}"></span>
         </div>
 
-        <p class="text-gray-500 mb-4">Total kategori: <strong th:text="${#lists.size(categories)}">0</strong></p>
+        <p class="text-gray-500 mb-4">Total kategori: <strong th:text="${categoryPage.totalElements}">0</strong></p>
 
-        <div th:if="${!#lists.isEmpty(categories)}">
+        <div th:if="${categoryPage.hasContent()}">
             <div class="bg-white shadow overflow-hidden border-b border-gray-200 rounded-lg">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-800 text-white">
@@ -74,8 +75,8 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr th:each="category, iterStat : ${categories}" class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${iterStat.index + 1}">1</td>
+                        <tr th:each="category, iterStat : ${categoryPage.content}" class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${categoryPage.number * categoryPage.size + iterStat.count}">1</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${category.name}">Nama Kategori</td>
                             <td class="px-6 py-4 text-sm text-gray-600" th:text="${category.description != null ? category.description : '-'}">Deskripsi</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
@@ -91,53 +92,69 @@
             </div>
         </div>
 
-        <div th:if="${#lists.isEmpty(categories)}" class="text-center py-12 bg-white rounded-lg shadow">
-            <p class="text-gray-500 text-lg mb-4" th:if="${search}">Tidak ada kategori yang ditemukan untuk "<span th:text="${search}"></span>"</p>
-            <p class="text-gray-500 text-lg mb-4" th:unless="${search}">Belum ada kategori.</p>
+        <div th:if="${!categoryPage.hasContent()}" class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-gray-500 text-lg mb-4" th:if="${search != null and !#strings.isEmpty(search)}">Tidak ada kategori yang ditemukan untuk "<span th:text="${search}"></span>"</p>
+            <p class="text-gray-500 text-lg mb-4" th:unless="${search != null and !#strings.isEmpty(search)}">Belum ada kategori.</p>
             <a th:href="@{/categories/new}" class="inline-flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm">
                 Tambah Kategori Pertama
             </a>
         </div>
 
         <!-- Pagination -->
-        <div th:if="${totalPages > 1}" class="mt-6 flex justify-center">
-            <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <!-- Previous -->
-                <a th:href="@{/categories(page=${currentPage - 1}, search=${search})}"
+        <div th:if="${categoryPage.totalPages > 1}" class="mt-6 flex flex-col items-center gap-4">
+            <nav class="inline-flex flex-wrap justify-center rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <a th:href="@{/categories(page=0, size=${pageSize}, search=${search})}"
                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                   th:class="${currentPage == 0} ? 'opacity-50 pointer-events-none' : ''">
+                   th:classappend="${categoryPage.first} ? ' opacity-50 pointer-events-none' : ''"
+                   aria-label="Halaman pertama">
+                    <span class="sr-only">First</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+                <a th:href="@{/categories(page=${categoryPage.number - 1}, size=${pageSize}, search=${search})}"
+                   class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                   th:classappend="${categoryPage.first} ? ' opacity-50 pointer-events-none' : ''">
                     <span class="sr-only">Previous</span>
                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
                     </svg>
                 </a>
 
-                <!-- Page Numbers -->
-                <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
-                    <a th:href="@{/categories(page=${i}, search=${search})}"
+                <span th:each="i : ${#numbers.sequence(pageWindowStart, pageWindowEnd)}">
+                    <a th:href="@{/categories(page=${i}, size=${pageSize}, search=${search})}"
                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium"
-                       th:class="${i == currentPage} ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'text-gray-500 hover:bg-gray-50'">
+                       th:class="${i == categoryPage.number} ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'text-gray-500 hover:bg-gray-50'">
                         <span th:text="${i + 1}">1</span>
                     </a>
                 </span>
 
-                <!-- Next -->
-                <a th:href="@{/categories(page=${currentPage + 1}, search=${search})}"
-                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                   th:class="${currentPage >= totalPages - 1} ? 'opacity-50 pointer-events-none' : ''">
+                <a th:href="@{/categories(page=${categoryPage.number + 1}, size=${pageSize}, search=${search})}"
+                   class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                   th:classappend="${categoryPage.last} ? ' opacity-50 pointer-events-none' : ''">
                     <span class="sr-only">Next</span>
                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+                <a th:href="@{/categories(page=${categoryPage.totalPages - 1}, size=${pageSize}, search=${search})}"
+                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                   th:classappend="${categoryPage.last} ? ' opacity-50 pointer-events-none' : ''"
+                   aria-label="Halaman terakhir">
+                    <span class="sr-only">Last</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        <path fill-rule="evenodd" d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                     </svg>
                 </a>
             </nav>
         </div>
 
         <!-- Page Info -->
-        <div class="mt-4 text-center text-sm text-gray-500">
-            <span>Halaman <strong th:text="${currentPage + 1}">1</strong> dari <strong th:text="${totalPages}">1</strong></span>
+        <div class="mt-4 text-center text-sm text-gray-500" th:if="${categoryPage.totalElements > 0}">
+            <span>Halaman <strong th:text="${categoryPage.number + 1}">1</strong> dari <strong th:text="${categoryPage.totalPages}">1</strong></span>
             <span class="mx-2">|</span>
-            <span>Total: <strong th:text="${totalItems}">0</strong> kategori</span>
+            <span>Menampilkan <strong th:text="${categoryPage.number * categoryPage.size + 1}">1</strong>–<strong th:text="${categoryPage.number * categoryPage.size + categoryPage.numberOfElements}">10</strong> dari <strong th:text="${categoryPage.totalElements}">0</strong></span>
         </div>
     </div>
 

@@ -2,13 +2,21 @@ package com.example.productcrud.controller;
 
 import com.example.productcrud.model.Category;
 import com.example.productcrud.service.CategoryService;
+import com.example.productcrud.util.PaginationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/categories")
@@ -27,29 +35,25 @@ public class CategoryController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             Model model) {
-        
-        List<Category> allCategories;
-        
-        if (search != null && !search.trim().isEmpty()) {
-            allCategories = categoryService.findByNameContainingIgnoreCase(search.trim());
-        } else {
-            allCategories = categoryService.findAll();
+
+        int pageSize = Math.min(50, Math.max(1, size));
+        int pageIndex = Math.max(0, page);
+
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by("name").ascending());
+        Page<Category> categoryPage = categoryService.findPage(search, pageable);
+
+        if (categoryPage.getTotalPages() > 0 && pageIndex >= categoryPage.getTotalPages()) {
+            pageIndex = categoryPage.getTotalPages() - 1;
+            pageable = PageRequest.of(pageIndex, pageSize, Sort.by("name").ascending());
+            categoryPage = categoryService.findPage(search, pageable);
         }
-        
-        // Manual pagination
-        int start = page * size;
-        int end = Math.min(start + size, allCategories.size());
-        List<Category> pagedCategories = start < allCategories.size() 
-            ? allCategories.subList(start, end) 
-            : java.util.Collections.emptyList();
-        
-        int totalPages = (int) Math.ceil((double) allCategories.size() / size);
-        
-        model.addAttribute("categories", pagedCategories);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalItems", allCategories.size());
+
+        model.addAttribute("categoryPage", categoryPage);
+        model.addAttribute("pageSize", pageSize);
         model.addAttribute("search", search);
+
+        PaginationUtil.addPageWindow(model, categoryPage.getNumber(), categoryPage.getTotalPages());
+
         return "category/list";
     }
 
