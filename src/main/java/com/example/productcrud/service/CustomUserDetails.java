@@ -3,7 +3,6 @@ package com.example.productcrud.service;
 import com.example.productcrud.model.User;
 import java.util.Collection;
 import java.util.Collections;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

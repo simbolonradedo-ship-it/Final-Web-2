@@ -1,6 +1,9 @@
 package com.example.productcrud.model;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Entity
 @Table(name = "products")
@@ -10,21 +13,59 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     private String name;
 
-    private long price;
-    private int stock;
-    private String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     public Product() {
     }
 
-    public Product(String name, long price, int stock, String description) {
+    private long price;
+
+    private int stock;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private boolean active;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate createdAt;
+
+    @Column(length = 50)
+    private String createdBy;
+
+    @Column(length = 50)
+    private String updatedBy;
+
+    public Product(Long id, String name, Category category, long price, int stock,
+                      String description, boolean active, LocalDate createdAt) {
+        this.id = id;
         this.name = name;
+        this.category = category;
         this.price = price;
         this.stock = stock;
         this.description = description;
+        this.active = active;
+        this.createdAt = createdAt;
+    }
+
+    public Product(Long id, String name, Category category, long price, int stock,
+                      String description, boolean active, LocalDate createdAt,
+                      String createdBy, String updatedBy) {
+        this.id = id;
+        this.name = name;
+        this.category = category;
+        this.price = price;
+        this.stock = stock;
+        this.description = description;
+        this.active = active;
+        this.createdAt = createdAt;
+        this.createdBy = createdBy;
+        this.updatedBy = updatedBy;
     }
 
     public Long getId() {
@@ -41,6 +82,14 @@ public class Product {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 
     public long getPrice() {
@@ -65,5 +114,45 @@ public class Product {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public LocalDate getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDate createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(String updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

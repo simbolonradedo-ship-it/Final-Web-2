@@ -1,14 +1,16 @@
 package com.example.productcrud.controller;
 
 import com.example.productcrud.model.Category;
+import com.example.productcrud.model.User;
 import com.example.productcrud.service.CategoryService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.productcrud.service.CustomUserDetails;
+import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/categories")
@@ -16,88 +18,92 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    @Autowired
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
 
-    @GetMapping
-    public String listCategories(
-            @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            Model model) {
-        
-        List<Category> allCategories;
-        
-        if (search != null && !search.trim().isEmpty()) {
-            allCategories = categoryService.findByNameContainingIgnoreCase(search.trim());
-        } else {
-            allCategories = categoryService.findAll();
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails) {
+            return ((CustomUserDetails) auth.getPrincipal()).getUser();
         }
-        
-        // Manual pagination
-        int start = page * size;
-        int end = Math.min(start + size, allCategories.size());
-        List<Category> pagedCategories = start < allCategories.size() 
-            ? allCategories.subList(start, end) 
-            : java.util.Collections.emptyList();
-        
-        int totalPages = (int) Math.ceil((double) allCategories.size() / size);
-        
-        model.addAttribute("categories", pagedCategories);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalItems", allCategories.size());
-        model.addAttribute("search", search);
-        return "category/list";
+        return null;
     }
 
-    @GetMapping("/{id}")
-    public String detailCategory(@PathVariable Long id, Model model) {
-        return categoryService.findById(id)
-                .map(category -> {
-                    model.addAttribute("category", category);
-                    return "category/detail";
-                })
-                .orElse("redirect:/categories");
+    @GetMapping
+    public String listCategories(Model model) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+
+        model.addAttribute("categories", categoryService.findAllByUser(currentUser));
+        return "category/list";
     }
 
     @GetMapping("/new")
     public String showCreateForm(Model model) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+
         model.addAttribute("category", new Category());
         return "category/form";
     }
 
     @GetMapping("/{id}/edit")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        return categoryService.findById(id)
+    public String showEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+
+        return categoryService.findByIdAndUser(id, currentUser)
                 .map(category -> {
                     model.addAttribute("category", category);
                     return "category/form";
                 })
-                .orElse("redirect:/categories");
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Category tidak ditemukan atau bukan milik Anda");
+                    return "redirect:/categories";
+                });
     }
 
-    @PostMapping
-    public String createCategory(@ModelAttribute Category category, RedirectAttributes redirectAttributes) {
-        categoryService.save(category);
-        redirectAttributes.addFlashAttribute("successMessage", "Kategori berhasil disimpan!");
+    @PostMapping("/save")
+    public String saveCategory(@Valid @ModelAttribute Category category, 
+                               RedirectAttributes redirectAttributes) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+
+        try {
+            categoryService.save(category, currentUser);
+            redirectAttributes.addFlashAttribute("successMessage", 
+                category.getId() != null ? "Category berhasil diperbarui" : "Category berhasil ditambahkan");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/categories/new";
+        }
+
         return "redirect:/categories";
     }
 
-    @PutMapping("/{id}")
-    public String updateCategory(@PathVariable Long id, @ModelAttribute Category category, RedirectAttributes redirectAttributes) {
-        category.setId(id);
-        categoryService.save(category);
-        redirectAttributes.addFlashAttribute("successMessage", "Kategori berhasil diperbarui!");
-        return "redirect:/categories";
-    }
-
-    @DeleteMapping("/{id}")
+    @PostMapping("/{id}/delete")
     public String deleteCategory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        categoryService.deleteById(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Kategori berhasil dihapus!");
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/auth/login";
+        }
+
+        try {
+            categoryService.deleteByIdAndUser(id, currentUser);
+            redirectAttributes.addFlashAttribute("successMessage", "Category berhasil dihapus");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/categories";
     }
 }

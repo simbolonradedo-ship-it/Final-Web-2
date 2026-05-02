@@ -1,25 +1,32 @@
 package com.example.productcrud.config;
 
 import com.example.productcrud.service.CustomUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private final AuthenticatedUserRedirectFilter authenticatedUserRedirectFilter;
 
-    @Autowired
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService, 
+                         CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler,
+                         AuthenticatedUserRedirectFilter authenticatedUserRedirectFilter) {
         this.userDetailsService = userDetailsService;
+        this.customAuthenticationSuccessHandler = customAuthenticationSuccessHandler;
+        this.authenticatedUserRedirectFilter = authenticatedUserRedirectFilter;
     }
 
     @Bean
@@ -35,30 +42,39 @@ public class SecurityConfig {
         return authProvider;
     }
 
-     @Bean
-     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-         http
-             .authorizeHttpRequests(auth -> auth
-                 .requestMatchers("/auth/login", "/auth/register", "/auth/logout", "/css/**", "/js/**", "/images/**", "/h2-console/**").permitAll()
-                 .anyRequest().authenticated()
-             )
-             .formLogin(form -> form
-                 .loginPage("/auth/login")
-                 .loginProcessingUrl("/auth/login")
-                 .defaultSuccessUrl("/products", true)
-                 .failureUrl("/auth/login?error=true")
-                 .permitAll()
-             )
-             .logout(logout -> logout
-                 .logoutUrl("/logout")
-                 .logoutSuccessUrl("/auth/login?logout=true")
-                 .invalidateHttpSession(true)
-                 .deleteCookies("JSESSIONID")
-                 .permitAll()
-             )
-             .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
-             .headers(headers -> headers.frameOptions().sameOrigin());
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
 
-         return http.build();
-     }
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/auth/login", "/auth/register", "/auth/logout", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**").permitAll()
+                .requestMatchers("/products/new", "/products/*/edit", "/products/*/delete", "/products/save").authenticated()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(authenticatedUserRedirectFilter, UsernamePasswordAuthenticationFilter.class)
+            .formLogin(form -> form
+                .loginPage("/auth/login")
+                .loginProcessingUrl("/auth/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureUrl("/auth/login?error=true")
+                .permitAll()
+                .successHandler(customAuthenticationSuccessHandler)
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/auth/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            )
+            .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+
+        return http.build();
+    }
 }
