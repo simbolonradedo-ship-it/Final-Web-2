@@ -137,13 +137,11 @@ public class DataInitializer {
         }
 
         int nCats = DEFAULT_CATEGORIES.length;
-
-        // Ambil "template" dari tabel products (kalau ada) untuk dijadikan sumber demo.
-        // Karena ownership berbasis category.user, tiap user tetap mendapat COPY produknya sendiri.
         List<Product> templateProducts = productRepository.findAll().stream()
                 .sorted(Comparator.comparing(Product::getId))
                 .limit(TOTAL_DEMO_PRODUCTS)
                 .toList();
+
         for (User u : users) {
             Map<String, Category> categoryMap = ensureDefaultCategories(u, categoryRepository);
 
@@ -161,14 +159,17 @@ public class DataInitializer {
                 Product p = new Product();
 
                 if (!templateProducts.isEmpty()) {
-                    // Clone dari produk yang sudah ada di tabel products
                     Product tpl = templateProducts.get((i - 1) % templateProducts.size());
-                    String tplCatName = (tpl.getCategory() != null && tpl.getCategory().getName() != null && !tpl.getCategory().getName().isBlank())
+                    String tplCatName = (tpl.getCategory() != null
+                            && tpl.getCategory().getName() != null
+                            && !tpl.getCategory().getName().isBlank())
                             ? tpl.getCategory().getName()
                             : DEFAULT_CATEGORIES[(i - 1) % nCats];
 
-                    // Pastikan kategori untuk user ada (kalau template pakai kategori lain, fallback ke default)
-                    Category targetCat = categoryMap.getOrDefault(tplCatName, categoryMap.get(DEFAULT_CATEGORIES[(i - 1) % nCats]));
+                    Category targetCat = categoryMap.getOrDefault(
+                            tplCatName,
+                            categoryMap.get(DEFAULT_CATEGORIES[(i - 1) % nCats])
+                    );
 
                     p.setName(tpl.getName() != null && !tpl.getName().isBlank()
                             ? tpl.getName() + " (demo)"
@@ -178,24 +179,20 @@ public class DataInitializer {
                     p.setStock(tpl.getStock());
                     p.setActive(tpl.isActive());
                     p.setCategory(targetCat);
-
-                    // Audit: selalu atas nama pemilik akun ini
                     p.setCreatedAt(tpl.getCreatedAt() != null ? tpl.getCreatedAt() : today);
-                    p.setCreatedBy(username);
-                    p.setUpdatedBy(username);
                 } else {
-                    // Fallback: generate demo seperti sebelumnya kalau tabel products masih kosong
                     String catName = DEFAULT_CATEGORIES[(i - 1) % nCats];
                     p.setName(catName + " — Item demo #" + i);
                     p.setDescription("Produk contoh #" + i + " pada kategori " + catName + " untuk pengujian daftar & pagination.");
                     p.setPrice(9_000L + (long) i * 7_500L);
                     p.setStock((i % 120) + 1);
-                    p.setCategory(categoryMap.get(catName));
                     p.setActive(true);
+                    p.setCategory(categoryMap.get(catName));
                     p.setCreatedAt(today);
-                    p.setCreatedBy(username);
-                    p.setUpdatedBy(username);
                 }
+
+                p.setCreatedBy(username);
+                p.setUpdatedBy(username);
                 batch.add(p);
             }
 

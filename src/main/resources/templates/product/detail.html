@@ -1,49 +1,101 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head}"></head>
-<body>
-<div class="app-shell">
-    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
-    <div class="main-area">
-        <a th:href="@{/products}" class="back-link">← Daftar produk</a>
-        <div class="form-card">
-            <div class="form-card-header">
-                <h1 th:text="${product.name}">Produk</h1>
-                <p style="margin:0.35rem 0 0;color:var(--text-muted);font-size:0.9rem;" th:text="${product.category?.name}">Kategori</p>
+<head th:replace="~{fragments/layout :: header}">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-violet-900">
+    <nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <div class="mb-6 animate-fade-in-up">
+            <a th:href="@{/products}" class="group inline-flex items-center text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                <svg class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Kembali ke Daftar
+            </a>
+        </div>
+
+        
+        <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden border border-white/20 animate-fade-in-up" style="animation-delay: 150ms;">
+            
+            <div class="bg-gradient-to-r from-primary-600 via-primary-700 to-purple-700 px-8 py-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                <div class="relative z-10">
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-white font-['Space_Grotesk']" th:text="${product.name}">Nama Produk</h2>
+                    <p class="text-primary-100 mt-1">Detail informasi produk</p>
+                </div>
             </div>
-            <div class="form-card-body">
-                <div class="stat-grid" style="margin-bottom:1rem;">
-                    <div class="stat-card">
-                        <div class="label">Harga</div>
-                        <div class="value" style="font-size:1.35rem;" th:text="${'Rp ' + #numbers.formatDecimal(product.price, 0, 'POINT', 0, 'COMMA')}">—</div>
+
+            
+            <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div class="border-b border-white/10 pb-4">
+                            <dt class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">Nama</dt>
+                            <dd class="mt-1 text-xl text-white font-semibold" th:text="${product.name}">-</dd>
+                        </div>
+                        <div class="border-b border-white/10 pb-4">
+                            <dt class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">Harga</dt>
+                            <dd class="mt-1 text-2xl md:text-3xl font-extrabold text-green-400" th:text="${'Rp ' + #numbers.formatDecimal(product.price, 0, 'POINT', 0, 'COMMA')}">Rp 0</dd>
+                        </div>
+                        <div class="border-b border-white/10 pb-4">
+                            <dt class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">Stok</dt>
+                            <dd class="mt-1">
+                                <span th:class="${product.stock > 0} ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium">
+                                    <span th:class="${product.stock > 0} ? 'w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse' : 'w-2 h-2 bg-red-400 rounded-full mr-2'" th:if="${product.stock > 0}"></span>
+                                    <span th:text="${product.stock > 0 ? product.stock + ' unit tersedia' : 'Habis / Out of Stock'}">0</span>
+                                </span>
+                            </dd>
+                        </div>
+                        <div class="border-b border-white/10 pb-4">
+                            <dt class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">Kategori</dt>
+                            <dd class="mt-1">
+                                <span class="px-3 py-1 rounded-full text-sm font-medium bg-primary-500/20 text-primary-300" th:text="${product.category != null ? product.category.name : 'Belum ditentukan'}">-</span>
+                            </dd>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="label">Stok</div>
-                        <div class="value" style="font-size:1.35rem;" th:text="${product.stock}">—</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="label">Status</div>
-                        <div class="value" style="font-size:1rem;">
-                            <span class="pill" th:classappend="${product.active} ? ' pill-green' : ' pill-red'"
-                                  th:text="${product.active} ? 'Aktif' : 'Nonaktif'">—</span>
+                    <div class="space-y-6">
+                        <div class="border-b border-white/10 pb-4">
+                            <dt class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">Deskripsi</dt>
+                            <dd class="mt-1 text-gray-300 whitespace-pre-wrap" th:text="${product.description != null ? product.description : '- Deskripsi belum ditambahkan'}">-</dd>
+                        </div>
+                        <div class="border-b border-white/10 pb-4">
+                            <dt class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">ID Produk</dt>
+                            <dd class="mt-1 text-gray-400 font-mono text-sm break-all" th:text="${product.id}">-</dd>
+                        </div>
+                        <div class="border-b border-white/10 pb-4">
+                            <dt class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-1">Status</dt>
+                            <dd class="mt-1">
+                                <span th:class="${(product.active == null || product.active)} ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'" class="px-3 py-1 rounded-full text-sm font-medium">
+                                    <span th:text="${(product.active == null || product.active)} ? 'Aktif' : 'Tidak Aktif'">Status</span>
+                                </span>
+                            </dd>
                         </div>
                     </div>
                 </div>
-                <div th:if="${product.description}">
-                    <div class="form-label">Deskripsi</div>
-                    <p style="color:var(--text-muted);" th:text="${product.description}"></p>
-                </div>
-                <div class="dl-grid" style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);">
-                    <p th:if="${product.createdAt}">Dibuat: <span th:text="${product.createdAt}"></span></p>
-                    <p th:if="${product.createdBy}">Oleh: <span th:text="${product.createdBy}"></span></p>
-                </div>
-                <div class="row-actions" style="margin-top:1.25rem;">
-                    <a th:href="@{/products/{id}/edit(id=${product.id})}" class="btn btn-primary">Edit</a>
-                    <a th:href="@{/products}" class="btn btn-secondary">Tutup</a>
+            </div>
+
+            
+            <div class="bg-white/5 px-8 py-6 border-t border-white/10">
+                <div class="flex flex-wrap gap-3">
+                    <a th:href="@{/products/{id}/edit(id=${product.id})}" class="group flex items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 font-semibold px-6 py-3 rounded-xl transition-all border border-yellow-500/20 hover:border-yellow-500/30">
+                        <svg class="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Edit Produk
+                    </a>
+                    <a th:href="@{/products}" class="group flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3 rounded-xl transition-all border border-white/20 hover:border-white/30">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        Lihat Semua Produk
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
 </html>

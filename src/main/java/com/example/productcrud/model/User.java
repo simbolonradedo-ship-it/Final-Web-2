@@ -2,6 +2,7 @@ package com.example.productcrud.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -15,6 +16,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
+    /** Selalu hash BCrypt ({@code $2a$}/{@code $2b$}/…); jangan simpan teks polos. */
     @Column(nullable = false, length = 255)
     private String password;
 
@@ -33,7 +35,7 @@ public class User {
     @Column(length = 500)
     private String bio;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 255)
     private String profileImageUrl;
     
     @Column(nullable = false)
@@ -83,6 +85,7 @@ public class User {
         this.username = username;
     }
 
+    @JsonIgnore
     public String getPassword() {
         return password;
     }
